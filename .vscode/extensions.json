@@ -5,8 +5,8 @@
         "editorconfig.editorconfig",
         "humao.rest-client",
         "ms-vscode.cpptools",
-        "actboy168.tasks"
-        // "marus25.cortex-debug"
+        "actboy168.tasks",
+        "marus25.cortex-debug"
     ],
     "unwantedRecommendations": [
         "ms-vscode.cpptools-extension-pack"

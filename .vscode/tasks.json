@@ -6,13 +6,14 @@
         "env": {
             "venvPath": "../.venv",
             "westPath": "../.venv/bin/west",
-            "netToolsPath": "../net-tools",
+            "netToolsPath": "../tools/net-tools",
+            "serialNumber": "683339521"
         }
     },
     "tasks": [
         {
             "label": "Build",
-            "detail": "Build for QEMU",
+            "detail": "Build",
             "type": "shell",
             "command": "${westPath} build",
             "args": [
@@ -31,10 +32,18 @@
             "problemMatcher": []
         },
         {
-            "label": "Run",
-            "detail": "Run for QEMU",
+            "label": "Flash",
+            "detail": "Flash",
             "type": "shell",
-            "command": "${westPath} build -t run",
+            "command": "${westPath}",
+            "args": [
+                "-v",
+                "flash",
+                "-r",
+                "nrfjprog",
+                "--snr",
+                "${serialNumber}",
+            ],
             "group": "build",
             "presentation": {
                 "reveal": "always",
@@ -44,59 +53,6 @@
                 "statusbar": {
                     "hide": false
                 }
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "(QEMU) loop socat",
-            "type": "shell",
-            "command": "${netToolsPath}/loop-socat.sh",
-            "presentation": {
-                "reveal": "silent",
-                "panel": "dedicated",
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "(QEMU) loop slip tap (SUDO)",
-            "type": "shell",
-            "command": "sudo ${netToolsPath}/loop-slip-tap.sh",
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "focus": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "(QEMU) iptable MASQUERADE (SUDO)",
-            "type": "shell",
-            "command": "sudo iptables -t nat -A POSTROUTING -j MASQUERADE -s 192.0.2.1 && sudo sysctl -w net.ipv4.ip_forward=1",
-            "presentation": {
-                "echo": false
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Run DBG srv",
-            "group": "build",
-            "detail": "Prepare debugserver for QEMU. Press F5",
-            "type": "shell",
-            // "options": {
-            //     "cwd": "${workspaceRoot}/build"
-            // },
-            "options": {
-                "statusbar": {
-                    "hide": false
-                }
-            },
-			"command": "ninja debugserver -C build -v",
-            "args": [
-            ],
-            "presentation": {
-                "reveal": "always",
-                "panel": "dedicated",
-                "focus": true,
             },
             "problemMatcher": []
         },
@@ -118,35 +74,18 @@
             "problemMatcher": []
         },
         {
-            "label": "gencertsh.py",
+            "label": "Readelf",
             "type": "shell",
-			"command": "python3 ./scripts/gencertsh.py",
-            "group": "build",
-            "args": [
-            ],
-            "options": {
-                "cwd": "${workspaceRoot}"
-            },
-            "presentation": {
-                "reveal": "silent",
-                "panel": "shared",
-                "focus": false,
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "(x86) Readelf",
-            "type": "shell",
-            "command": "readelf -a ${workspaceFolder}/build/zephyr/zephyr.elf > readelf.txt",
+            "command": "arm-none-eabi-readelf -a ${workspaceFolder}/build/zephyr/zephyr.elf > readelf.txt",
             "presentation": {
                 "echo": false,
             },
             "problemMatcher": []
         },
         {
-            "label": "(x86) Disassembly",
+            "label": "Disassembly",
             "type": "shell",
-            "command": "objdump -S ${workspaceFolder}/build/zephyr/zephyr.elf > disassembly.S",
+            "command": "arm-none-eabi-objdump -S ${workspaceFolder}/build/zephyr/zephyr.elf > disassembly.S",
             "presentation": {
                 "echo": false,
             },

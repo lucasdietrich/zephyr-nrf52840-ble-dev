@@ -12,7 +12,6 @@
             "executable": "${workspaceFolder}/build/zephyr/zephyr.elf",
             "args": [],
             "stopAtEntry": true,
-            // "device": "MK66FX1M0xxx18",
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": true,
@@ -22,6 +21,7 @@
             "serverpath": "/opt/SEGGER/JLink/JLinkGDBServerCLExe",
             "serialNumber": "683339521",
             "miDebuggerServerAddress": "localhost:2331",
+            // "preLaunchTask": "Flash",
             "runToEntryPoint": "main",
             "setupCommands": [
                 {
