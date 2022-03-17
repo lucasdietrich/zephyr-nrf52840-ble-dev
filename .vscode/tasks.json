@@ -1,0 +1,170 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "options": {
+        "env": {
+            "venvPath": "../.venv",
+            "westPath": "../.venv/bin/west",
+            "netToolsPath": "../net-tools",
+        }
+    },
+    "tasks": [
+        {
+            "label": "Build",
+            "detail": "Build for QEMU",
+            "type": "shell",
+            "command": "${westPath} build",
+            "args": [
+
+            ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "options": {
+                "statusbar": {
+                    "hide": false
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run",
+            "detail": "Run for QEMU",
+            "type": "shell",
+            "command": "${westPath} build -t run",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "options": {
+                "statusbar": {
+                    "hide": false
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "(QEMU) loop socat",
+            "type": "shell",
+            "command": "${netToolsPath}/loop-socat.sh",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "dedicated",
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "(QEMU) loop slip tap (SUDO)",
+            "type": "shell",
+            "command": "sudo ${netToolsPath}/loop-slip-tap.sh",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "(QEMU) iptable MASQUERADE (SUDO)",
+            "type": "shell",
+            "command": "sudo iptables -t nat -A POSTROUTING -j MASQUERADE -s 192.0.2.1 && sudo sysctl -w net.ipv4.ip_forward=1",
+            "presentation": {
+                "echo": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Run DBG srv",
+            "group": "build",
+            "detail": "Prepare debugserver for QEMU. Press F5",
+            "type": "shell",
+            // "options": {
+            //     "cwd": "${workspaceRoot}/build"
+            // },
+            "options": {
+                "statusbar": {
+                    "hide": false
+                }
+            },
+			"command": "ninja debugserver -C build -v",
+            "args": [
+            ],
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": true,
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean",
+            "type": "shell",
+			"command": "rm -rf ${workspaceFolder}/build",
+            "group": "build",
+            "args": [
+            ],
+            "options": {
+                "statusbar": {
+                    "hide": false
+                }
+            },
+            "presentation": {
+                "echo": false,
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "gencertsh.py",
+            "type": "shell",
+			"command": "python3 ./scripts/gencertsh.py",
+            "group": "build",
+            "args": [
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "focus": false,
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "(x86) Readelf",
+            "type": "shell",
+            "command": "readelf -a ${workspaceFolder}/build/zephyr/zephyr.elf > readelf.txt",
+            "presentation": {
+                "echo": false,
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "(x86) Disassembly",
+            "type": "shell",
+            "command": "objdump -S ${workspaceFolder}/build/zephyr/zephyr.elf > disassembly.S",
+            "presentation": {
+                "echo": false,
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Activate Python venv",
+            "type": "shell",
+            "command": "source ${venvPath}/bin/activate && sh",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new",
+                "close": false,
+                "focus": true,
+                "echo": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}

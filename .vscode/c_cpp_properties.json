@@ -1,0 +1,62 @@
+// https://wiki.segger.com/J-Link_Visual_Studio_Code
+{
+    "env" : {
+        "zephyrDirectory": "../zephyr",
+        "modulesDirectory":  "../modules",
+        "buildDirectory": "${workspaceFolder}/build"
+        // "compilerPath": "/usr/bin/arm-none-eabi-gcc"
+    }, 
+    "configurations": [
+        {
+            "name": "Demo",
+            "includePath": [
+                "src",
+                "include",
+                "${buildDirectory}/zephyr/include/generated",
+                "${zephyrDirectory}/include",
+                "${zephyrDirectory}/soc/arm/nordic_nrf/nrf52",
+                "${zephyrDirectory}/subsys/bluetooth",
+                "${modulesDirectory}/hal/cmsis/CMSIS/Core/Include",
+                "${modulesDirectory}/hal/nordic/nrfx",
+                "${modulesDirectory}/hal/nordic/nrfx/drivers/include",
+                "${modulesDirectory}/hal/nordic/nrfx/mdk",
+                "${zephyrDirectory}/modules/hal_nordic/nrfx",
+                "${modulesDirectory}/debug/segger/SEGGER",
+                "${modulesDirectory}/debug/segger/Config",
+                "${zephyrDirectory}/modules/segger",
+                "${modulesDirectory}/crypto/tinycrypt/lib/include"
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "src",
+                    "include",
+                    "${zephyrDirectory}/include",
+                    "${zephyrDirectory}/kernel/include",
+                    "${buildDirectory}/zephyr/include/generated",
+                    "${zephyrDirectory}/soc/arm/nordic_nrf/nrf52",
+                    "${zephyrDirectory}/subsys/bluetooth",
+                    "${modulesDirectory}/hal/cmsis/CMSIS/Core/Include",
+                    "${modulesDirectory}/hal/nordic/nrfx",
+                    "${modulesDirectory}/hal/nordic/nrfx/drivers/include",
+                    "${modulesDirectory}/hal/nordic/nrfx/mdk",
+                    "${zephyrDirectory}/modules/hal_nordic/nrfx",
+                    "${modulesDirectory}/debug/segger/SEGGER",
+                    "${modulesDirectory}/debug/segger/Config",
+                    "${zephyrDirectory}/modules/segger",
+                    "${modulesDirectory}/crypto/tinycrypt/lib/include"
+                ]
+            },
+            "intelliSenseMode": "gcc-arm",
+            "cStandard": "c99",
+            // "compilerPath": "${compilerPath}",
+            // "cppStandard": "c++11",
+            // "cStandard": "c11"
+            "forcedInclude": [
+                "${buildDirectory}/zephyr/include/generated/autoconf.h",
+                "${zephyrDirectory}/include/toolchain/zephyr_stdint.h"
+            ]
+        }
+    ],
+    "version": 4
+}
