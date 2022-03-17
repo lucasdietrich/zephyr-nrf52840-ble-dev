@@ -46,7 +46,7 @@
             ],
             "group": "build",
             "presentation": {
-                "reveal": "always",
+                "reveal": "silent",
                 "panel": "dedicated"
             },
             "options": {

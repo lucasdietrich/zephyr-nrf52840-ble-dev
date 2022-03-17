@@ -14,17 +14,45 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
+bt_addr_le_t devices[10];
+uint32_t devices_count = 0U;
+
+bool exists(const bt_addr_le_t *new_addr)
+{
+	for (bt_addr_le_t *addr = devices; addr < devices + devices_count; addr++) {
+		if (bt_addr_le_cmp(addr, new_addr) == 0) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool append(const bt_addr_le_t *new_addr)
+{
+	if (devices_count == ARRAY_SIZE(devices)) {
+		return false;
+	}
+
+	bt_addr_le_copy(devices + devices_count, new_addr);
+	devices_count++;
+
+	return true;
+}
+
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
+	if (exists(addr) == false) {
+		append(addr);
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("7\tDevice found: %s (RSSI %d) ad len = %d \n\t\t", addr_str, rssi, ad->len);
-	for (size_t i = 0; i < ad->len; i++) {
-		printk("%02x ", ad->data[i]);
+		char addr_str[BT_ADDR_LE_STR_LEN];
+		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+		printk("Device found: %s (RSSI %d) ad len = %d \n\t", addr_str, rssi, ad->len);
+		for (size_t i = 0; i < ad->len; i++) {
+			printk("%02x ", ad->data[i]);
+		}
+		printk("\n");
 	}
-	printk("\n");
 }
 
 void main(void)
@@ -57,8 +85,11 @@ void main(void)
 
 	printk("Scanning...\n");
 
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(30));
 
 	err = bt_le_scan_stop();
 	printk("bt_le_scan_stop = %d\n", err);
+
+	// show number of devices found
+	printk("Found %d devices\n", devices_count);
 }

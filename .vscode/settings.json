@@ -39,6 +39,16 @@
         "string.h": "c",
         "stdbool.h": "c",
         "limits.h": "c",
-        "printk.h": "c"
+        "printk.h": "c",
+        "atomic": "c",
+        "cstdint": "c",
+        "random": "c",
+        "*.tcc": "c",
+        "stdint-gcc.h": "c",
+        "stdint.h": "c",
+        "stddef.h": "c",
+        "newlib.h": "c",
+        "_stdint.h": "c",
+        "_default_types.h": "c"
     }
 }
