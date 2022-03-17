@@ -4,7 +4,6 @@
         "zephyrDirectory": "../zephyr",
         "modulesDirectory":  "../modules",
         "buildDirectory": "${workspaceFolder}/build",
-        "compilerPath": "/usr/bin/arm-none-eabi-gcc"
     }, 
     "configurations": [
         {
@@ -14,6 +13,7 @@
                 "include",
                 "${buildDirectory}/zephyr/include/generated",
                 "${zephyrDirectory}/include",
+                "${zephyrDirectory}/lib/libc/newlib/include",
                 "${zephyrDirectory}/soc/arm/nordic_nrf/nrf52",
                 "${zephyrDirectory}/subsys/bluetooth",
                 "${modulesDirectory}/hal/cmsis/CMSIS/Core/Include",
@@ -24,7 +24,9 @@
                 "${modulesDirectory}/debug/segger/SEGGER",
                 "${modulesDirectory}/debug/segger/Config",
                 "${zephyrDirectory}/modules/segger",
-                "${modulesDirectory}/crypto/tinycrypt/lib/include"
+                "${modulesDirectory}/crypto/tinycrypt/lib/include",
+                "${zephyrDirectory}/include/posix",
+                "/usr/lib/arm-none-eabi/include"
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
@@ -32,6 +34,7 @@
                     "src",
                     "include",
                     "${zephyrDirectory}/include",
+                    "${zephyrDirectory}/lib/libc/newlib/include/**",
                     "${zephyrDirectory}/kernel/include",
                     "${buildDirectory}/zephyr/include/generated",
                     "${zephyrDirectory}/soc/arm/nordic_nrf/nrf52",
@@ -47,7 +50,11 @@
                     "${modulesDirectory}/crypto/tinycrypt/lib/include"
                 ]
             },
-            // "intelliSenseMode": "gcc-arm",
+            "defines": [
+                "NRF52840_XXAA",
+                "__ZEPHYR__=1"
+            ],
+            "compilerPath": "/usr/bin/arm-none-eabi-gcc",
             "cStandard": "c99",
             // "compilerPath": "${compilerPath}",
             // "cppStandard": "c++11",
