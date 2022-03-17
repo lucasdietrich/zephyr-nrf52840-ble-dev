@@ -23,7 +23,35 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 bt_addr_le_t devices[10];
 uint32_t devices_count = 0U;
 
-static struct bt_gatt_discover_params discover_params;
+static uint8_t discover_func(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr,
+			     struct bt_gatt_discover_params *params);
+
+/* Discover procedures can be initiated with the use of bt_gatt_discover() API which takes the bt_gatt_discover_params struct which describes the type of discovery. The parameters also serves as a filter when setting the uuid field only attributes which matches will be discovered, in contrast setting it to NULL allows all attributes to be discovered. */
+static struct bt_gatt_discover_params discover_params_all = {
+	.uuid = NULL,
+	.func = discover_func,
+	.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE,
+	.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE,
+	.type = BT_GATT_DISCOVER_ATTRIBUTE
+};
+
+static struct bt_gatt_discover_params discover_params_primary = {
+	.uuid = NULL,
+	.func = discover_func,
+	.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE,
+	.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE,
+	.type = BT_GATT_DISCOVER_PRIMARY
+};
+
+// static const struct bt_gatt_discover_params discover_params_primary = {
+// 	.uuid = NULL,
+// 	.func = discover_func,
+// 	.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE,
+// 	.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE,
+// 	.type = BT_GATT_DISCOVER_PRIMARY
+// };
+
 static struct bt_gatt_subscribe_params subscribe_params;
 
 // LYWSD03MMC
@@ -88,7 +116,14 @@ static uint8_t discover_func(struct bt_conn *conn,
 		return BT_GATT_ITER_STOP;
 	}
 
-	printk("[ATTRIBUTE] handle 0x%x\n", attr->handle);
+	// show uuid
+	char uuid_str[BT_UUID_STR_LEN];
+	bt_uuid_to_str(attr->uuid, uuid_str, sizeof(uuid_str));
+
+	printk("[ATTRIBUTE] handle 0x%x : uuid %s perm = %hhu\n",
+	       attr->handle,
+	       uuid_str,
+	       attr->perm);
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -110,14 +145,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	if (conn == default_conn) {
 		LOG_INF("Connected: %s\n", log_strdup(addr));
 
-		/* Discover procedures can be initiated with the use of bt_gatt_discover() API which takes the bt_gatt_discover_params struct which describes the type of discovery. The parameters also serves as a filter when setting the uuid field only attributes which matches will be discovered, in contrast setting it to NULL allows all attributes to be discovered. */
-		discover_params.uuid = NULL;
-		discover_params.func = discover_func;
-		discover_params.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE;
-		discover_params.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE;
-		discover_params.type = BT_GATT_DISCOVER_PRIMARY;
-
-		err = bt_gatt_discover(default_conn, &discover_params);
+		err = bt_gatt_discover(default_conn, &discover_params_all);
 		if (err) {
 			printk("Discover failed(err %d)\n", err);
 			return;
