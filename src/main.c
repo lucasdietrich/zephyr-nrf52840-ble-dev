@@ -17,11 +17,15 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
+#include <stdio.h>
+
 #include <logging/log.h>
-LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 bt_addr_le_t devices[10];
 uint32_t devices_count = 0U;
+
+K_SEM_DEFINE(discovery_sem, 0, 1);
 
 static uint8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
@@ -36,15 +40,7 @@ static struct bt_gatt_discover_params discover_params_all = {
 	.type = BT_GATT_DISCOVER_ATTRIBUTE
 };
 
-static struct bt_gatt_discover_params discover_params_primary = {
-	.uuid = NULL,
-	.func = discover_func,
-	.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE,
-	.end_handle = BT_ATT_LAST_ATTTRIBUTE_HANDLE,
-	.type = BT_GATT_DISCOVER_PRIMARY
-};
-
-// static const struct bt_gatt_discover_params discover_params_primary = {
+// static struct bt_gatt_discover_params discover_params_primary = {
 // 	.uuid = NULL,
 // 	.func = discover_func,
 // 	.start_handle = BT_ATT_FIRST_ATTTRIBUTE_HANDLE,
@@ -52,7 +48,7 @@ static struct bt_gatt_discover_params discover_params_primary = {
 // 	.type = BT_GATT_DISCOVER_PRIMARY
 // };
 
-static struct bt_gatt_subscribe_params subscribe_params;
+// static struct bt_gatt_subscribe_params subscribe_params;
 
 // LYWSD03MMC
 const char target_str[] = "A4:C1:38:A7:30:C4"; // xiaomi
@@ -91,17 +87,54 @@ void process_target(const bt_addr_le_t *addr)
 	LOG_DBG("bt_conn_le_create = %d", ret);
 }
 
-static uint8_t notify_func(struct bt_conn *conn,
-			   struct bt_gatt_subscribe_params *params,
-			   const void *data, uint16_t length)
-{
-	if (!data) {
-		printk("[UNSUBSCRIBED]\n");
-		params->value_handle = 0U;
-		return BT_GATT_ITER_STOP;
-	}
+// static uint8_t notify_func(struct bt_conn *conn,
+// 			   struct bt_gatt_subscribe_params *params,
+// 			   const void *data, uint16_t length)
+// {
+// 	if (!data) {
+// 		printk("[UNSUBSCRIBED]\n");
+// 		params->value_handle = 0U;
+// 		return BT_GATT_ITER_STOP;
+// 	}
 
-	printk("[NOTIFICATION] data %p length %u\n", data, length);
+// 	printk("[NOTIFICATION] data %p length %u\n", data, length);
+// 	LOG_HEXDUMP_DBG(data, length, "data");
+
+// 	return BT_GATT_ITER_CONTINUE;
+// }
+
+static void show_data(const uint8_t *data, uint16_t len)
+{
+	LOG_HEXDUMP_DBG(data, len, "data");
+
+	uint16_t uTemperature = data[0] | (data[1] << 8);
+	int16_t Temperature = *((int16_t*) &uTemperature); // 1e-2 °C
+	uint8_t Hygrometry = data[2]; // %
+	uint16_t batteryVoltage = data[3] | (data[4] << 8); // mV
+	
+	LOG_INF("T : %hd.%02hd °C [ %u ], H %hhu %%, bat %u mV",
+		Temperature / 100, Temperature % 100,
+		(uint32_t)uTemperature, Hygrometry, 
+		(uint32_t) batteryVoltage);
+
+	// static char float_str[20];
+	// float fTemperature = Temperature / 100.0; // °C
+	// sprintf(float_str, "%.2f °C", fTemperature);
+	// LOG_INF("Temperature %s", log_strdup(float_str));
+}
+
+uint8_t handle_cb_0x36(struct bt_conn *conn, uint8_t err,
+		       struct bt_gatt_read_params *params,
+		       const void *data, uint16_t length)
+{
+	LOG_DBG("conn %x err %hhx params %x data %x length %u",
+		(uint32_t)conn, err, (uint32_t)params,
+		(uint32_t)data, (uint32_t)length);
+	LOG_HEXDUMP_INF(data, length, "data");
+
+	if (length == 5U) {
+		show_data(data, length);
+	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -111,21 +144,48 @@ static uint8_t discover_func(struct bt_conn *conn,
 			     struct bt_gatt_discover_params *params)
 {
 	if (!attr) {
-		printk("Discover complete\n");
+		LOG_INF("Discover complete %d", 0);
 		(void)memset(params, 0, sizeof(*params));
+
+		// read phandle 0x36
+		struct bt_gatt_read_params read_params = {
+			.func = handle_cb_0x36,
+			.handle_count = 1U,
+			.single.handle = 0x36U,
+		};
+		int ret = bt_gatt_read(default_conn, &read_params);
+		LOG_DBG("bt_gatt_read = %d", ret);
+
 		return BT_GATT_ITER_STOP;
 	}
 
 	// show uuid
-	char uuid_str[BT_UUID_STR_LEN];
+	static char uuid_str[BT_UUID_STR_LEN];
 	bt_uuid_to_str(attr->uuid, uuid_str, sizeof(uuid_str));
 
-	printk("[ATTRIBUTE] handle 0x%x : uuid %s perm = %hhu\n",
+	LOG_DBG("[ATTRIBUTE] handle 0x%x : uuid %s perm = %hhu",
 	       attr->handle,
-	       uuid_str,
+	       log_strdup(uuid_str),
 	       attr->perm);
+	
+	// subscribe to handle 0x36
+	// if ((bt_gatt_attr_value_handle(attr) == 0x36U) || (attr->handle == 0x36U)) {
+	// 	printk("[SUBSCRIBING to handle 0x36]\n");
 
-	return BT_GATT_ITER_CONTINUE;
+	// 	subscribe_params.value_handle = 0x36;
+	// 	subscribe_params.value = BT_GATT_CCC_NOTIFY;
+	// 	subscribe_params.notify = notify_func;
+	// 	int err = bt_gatt_subscribe(conn, &subscribe_params);
+	// 	if (err && err != -EALREADY) {
+	// 		printk("Subscribe failed (err %d)\n", err);
+	// 	} else {
+	// 		printk("[SUBSCRIBED]\n");
+	// 	}
+	// 	return BT_GATT_ITER_STOP;
+
+	// }
+
+	return BT_GATT_ITER_CONTINUE;	
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -143,21 +203,19 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	}
 
 	if (conn == default_conn) {
-		LOG_INF("Connected: %s\n", log_strdup(addr));
+		LOG_INF("Connected: %s", log_strdup(addr));
 
 		err = bt_gatt_discover(default_conn, &discover_params_all);
 		if (err) {
-			printk("Discover failed(err %d)\n", err);
+			LOG_ERR("Discover failed(err %d)", err);
 			return;
 		}
 	}
-
-	// bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
+	static char addr[BT_ADDR_LE_STR_LEN];
 
 	if (conn != default_conn) {
 		return;
@@ -165,10 +223,12 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	LOG_INF("Disconnected: %s (reason 0x%02x)\n", log_strdup(addr), reason);
+	LOG_INF("Disconnected: %s (reason 0x%02x)", log_strdup(addr), reason);
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
+
+	k_sem_give(&discovery_sem);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -183,16 +243,14 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		append(addr);
 
 		if (rssi > -55) {
-			printk("[ CLOSE ]");
+			LOG_INF("[ CLOSE ] %d", 0);
 		}
 
-		char addr_str[BT_ADDR_LE_STR_LEN];
+		static char addr_str[BT_ADDR_LE_STR_LEN];
 		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		printk("Device found: %s (RSSI %d) ad len = %d \n\t", addr_str, rssi, ad->len);
-		for (size_t i = 0; i < ad->len; i++) {
-			printk("%02x ", ad->data[i]);
-		}
-		printk("\n");
+
+		LOG_INF("Device found: %s (RSSI %d) ad len = %d", log_strdup(addr_str), rssi, ad->len);
+		LOG_HEXDUMP_DBG(ad->data, ad->len, "ad");
 	}
 }
 
@@ -206,38 +264,40 @@ void main(void)
 	};
 	int err;
 
-	printk("Starting Observer\n");
+	LOG_INF("Starting Observer %d", 0);
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(NULL);
 	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
+		LOG_INF("Bluetooth init failed (err %d)", err);
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized %d", 0);
 
 	err = bt_le_scan_start(&scan_param, device_found);
-	printk("\n");
 	if (err) {
-		printk("Starting scanning failed (err %d)\n", err);
+		LOG_INF("Starting scanning failed (err %d)", err);
 		return;
 	}
 
-	printk("Scanning...\n");
+	LOG_INF("Scanning... %d", 0);
 
 	k_sleep(K_SECONDS(5));
 
 	err = bt_le_scan_stop();
-	printk("bt_le_scan_stop = %d\n", err);
+	LOG_INF("bt_le_scan_stop = %d", err);
 
 	// show number of devices found
-	printk("Found %d devices\n", devices_count);
+	LOG_INF("Found %d devices", devices_count);
 
 	// convert target_str to address and connect to it if it is in the devices list
 	bt_addr_le_t target_addr;
 	bt_addr_le_from_str(target_str, "public", &target_addr);
 	process_target(&target_addr);
+
+	LOG_INF("Main wait ... %d", 0);
+	
 
 	for(;;) {
 		k_sleep(K_SECONDS(1));
