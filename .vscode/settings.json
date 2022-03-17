@@ -49,6 +49,15 @@
         "stddef.h": "c",
         "newlib.h": "c",
         "_stdint.h": "c",
-        "_default_types.h": "c"
+        "_default_types.h": "c",
+        "array": "c",
+        "chrono": "c",
+        "functional": "c",
+        "istream": "c",
+        "ostream": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c"
     }
 }
