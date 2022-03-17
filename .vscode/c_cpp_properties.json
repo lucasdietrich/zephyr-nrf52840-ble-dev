@@ -3,8 +3,8 @@
     "env" : {
         "zephyrDirectory": "../zephyr",
         "modulesDirectory":  "../modules",
-        "buildDirectory": "${workspaceFolder}/build"
-        // "compilerPath": "/usr/bin/arm-none-eabi-gcc"
+        "buildDirectory": "${workspaceFolder}/build",
+        "compilerPath": "/usr/bin/arm-none-eabi-gcc"
     }, 
     "configurations": [
         {
@@ -47,7 +47,7 @@
                     "${modulesDirectory}/crypto/tinycrypt/lib/include"
                 ]
             },
-            "intelliSenseMode": "gcc-arm",
+            // "intelliSenseMode": "gcc-arm",
             "cStandard": "c99",
             // "compilerPath": "${compilerPath}",
             // "cppStandard": "c++11",

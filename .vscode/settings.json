@@ -33,6 +33,12 @@
         "gap.h": "c",
         "buf.h": "c",
         "errno.h": "c",
-        "util.h": "c"
+        "util.h": "c",
+        "types.h": "c",
+        "kobject.h": "c",
+        "string.h": "c",
+        "stdbool.h": "c",
+        "limits.h": "c",
+        "printk.h": "c"
     }
 }
