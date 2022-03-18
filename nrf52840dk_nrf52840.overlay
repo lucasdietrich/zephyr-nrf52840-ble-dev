@@ -1,0 +1,13 @@
+/ {
+    aliases {
+        ipc-uart = &uart1;
+    };
+};
+
+// https://docs.zephyrproject.org/latest/reference/devicetree/bindings/serial/nordic%2Cnrf-uarte.html
+&uart1 {
+    status = "okay";
+    current-speed = <1000000>; // set to 1000000 (0xf4240) or 115200 (0x1c200)
+    parity = "none";
+    // hw-flow-control;
+};
