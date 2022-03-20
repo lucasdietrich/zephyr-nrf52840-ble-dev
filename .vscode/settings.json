@@ -59,6 +59,10 @@
         "tuple": "c",
         "type_traits": "c",
         "utility": "c",
-        "cstdio": "c"
+        "cstdio": "c",
+        "crc.h": "c",
+        "poll.h": "c",
+        "ipc.h": "c",
+        "ipc_service.h": "c"
     }
 }
