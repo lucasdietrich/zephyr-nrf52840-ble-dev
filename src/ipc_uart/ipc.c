@@ -145,6 +145,14 @@ static void wrap_ipc_frame(ipc_frame_t *frame, uint32_t sequence_number)
 	frame->crc32 = ipc_frame_crc32(frame);
 }
 
+static void ipc_log_frame(const ipc_frame_t *frame)
+{
+	LOG_INF("IPC frame: %u B, seq = %x, data size = %u, sfd = %x, efd = %x crc32=%x",
+		IPC_FRAME_SIZE, frame->seq, frame->data.size, frame->start_delimiter,
+		frame->end_delimiter, frame->crc32);
+	LOG_HEXDUMP_DBG(frame->data.buf, frame->data.size, "IPC frame data");
+}
+
 void tx_thread(void *_a, void *_b, void *_c)
 {
 	int ret;
@@ -246,14 +254,4 @@ int ipc_send_data(const ipc_data_t *data)
 	tx_queue_frame(frame);
 
 	return 0;
-}
-
-/*___________________________________________________________________________*/
-
-void ipc_log_frame(const ipc_frame_t *frame)
-{
-	LOG_INF("IPC frame: %u B, seq = %x, data size = %u, sfd = %x, efd = %x crc32=%x",
-		IPC_FRAME_SIZE, frame->seq, frame->data.size, frame->start_delimiter,
-		frame->end_delimiter, frame->crc32);
-	// LOG_HEXDUMP_DBG(frame->data.buf, frame->data.size, "IPC frame data");
 }
