@@ -357,8 +357,16 @@ static int scan(k_timeout_t timeout)
 	return ret;
 }
 
+static const struct bt_conn_le_create_param conn_create_param = {
+	.options = BT_CONN_LE_OPT_NONE,
+	.interval = BT_GAP_SCAN_FAST_INTERVAL,
+	.window = BT_GAP_SCAN_FAST_INTERVAL,
+	.interval_coded = 0,
+	.window_coded = 0,
+	.timeout = 0,
+};
 
-const struct bt_le_conn_param conn_param = BT_LE_CONN_PARAM_INIT(
+static const struct bt_le_conn_param conn_param = BT_LE_CONN_PARAM_INIT(
 	BT_GAP_INIT_CONN_INT_MIN, /* Minimum Connection Interval (N * 1.25 ms) */
 	BT_GAP_INIT_CONN_INT_MAX, /* Maximum Connection Interval (N * 1.25 ms) */
 	0, /* Connection Latency */
@@ -382,8 +390,8 @@ static int retrieve_xiaomi_measurements(xiaomi_context_t *ctx)
 	}
 
 	ret = bt_conn_le_create(&ctx->addr,
-				BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT,
+				&conn_create_param,
+				&conn_param,
 				&ctx->conn);
 	if (ret < 0) {
 		LOG_ERR("Failed to create connection (ret %d)", ret);
