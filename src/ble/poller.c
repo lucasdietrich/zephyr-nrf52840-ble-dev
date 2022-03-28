@@ -25,8 +25,6 @@ K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0,
 
 #define XIAOMI_MAX_DEVICES 20
 
-struct bt_conn *gconn;
-
 typedef enum {
 	STATE_NONE = 0,
 	STATE_DISCOVERED,
@@ -34,8 +32,6 @@ typedef enum {
 	STATE_DATA,
 	STATE_DISCONNECTED,
 } xiaomi_state_t;
-
-#define STATE_ACTIVE STATE_DISCOVERED
 
 typedef struct {
 	bt_addr_le_t addr;
@@ -214,12 +210,14 @@ static uint8_t measurement_cb(struct bt_conn *conn,
 
 		/* close the connection */
 		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	} else if (ctx->write_count != 5) {
+	} else if ((length == 3U) &&  (ctx->write_count != 5)) {
 		LOG_WRN("Invalid measurement data length %u", length);
 
-		// activate_measurements(ctx);
-
-		read_measurements(ctx);
+		activate_measurements(ctx);
+	} else if (length == 0) {
+		if (read_measurements(ctx) != 0) {
+			bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		}
 	} else {
 		LOG_WRN("Write count exceeded = %u", ctx->write_count);
 
@@ -401,9 +399,6 @@ static int retrieve_xiaomi_measurements(xiaomi_context_t *ctx)
 	return 0;
 }
 
-// const char target_str[] = "A4:C1:38:A7:30:C4"; // xiaomi (normal)
-const char target_str[] = "A4:C1:38:68:05:63"; // xiaomi (normal)
-
 void thread(void *_a, void *_b, void *_c)
 {
 	int ret;
@@ -411,10 +406,6 @@ void thread(void *_a, void *_b, void *_c)
 	initialize();
 
 	scan(K_SECONDS(20));
-
-	bt_addr_le_t target_addr;
-	bt_addr_le_from_str(target_str, "public", &target_addr);
-	xiaomi_context_t *device = NULL;
 
 	// list found devices
 	for (uint32_t i = 0; i < devices_count; i++) {
@@ -424,11 +415,6 @@ void thread(void *_a, void *_b, void *_c)
 		bt_addr_le_to_str(&dev->addr, addr_str, sizeof(addr_str));
 
 		LOG_INF("Device %u: %s", i, log_strdup(addr_str));
-
-		if (bt_addr_cmp((const bt_addr_t *)&dev->addr.a,
-				(const bt_addr_t *)&target_addr.a) == 0) {
-			device = dev;
-		}
 	}
 
 	for (;;) {
