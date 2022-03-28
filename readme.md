@@ -41,6 +41,7 @@ Expected output :
 | `nrf52840dk_nrf52840` - SN `683624946` | Sniffer |
 | Xiaomi LYWSD03MMC - `??` | `A4:C1:38:68:05:63` |
 | Xiaomi LYWSD03MMC - `Lucas` | `A4:C1:38:A7:30:C4` |
+| Xiaomi LYWSD03MMC - `Salon` | `A4:C1:38:3C:D3:21` |
 
 ### Comments
 
