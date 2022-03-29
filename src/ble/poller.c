@@ -96,7 +96,7 @@ typedef struct {
 	/**
 	 * @brief Last retrieved record
 	 */
-	xiaomi_record_t record;
+	xiaomi_measurements_t measurements;
 
 	/**
 	 * @brief Write count on handler 0x38 in order to active 
@@ -109,7 +109,7 @@ typedef struct {
 	/**
 	 * @brief Time of the last attempt of measurements retrieval
 	 */
-	uint32_t last_process;
+	uint32_t last_measurement;
 
 	/**
 	 * @brief Number of times connection to the device failed. 
@@ -157,11 +157,11 @@ static void show_device_measurements(xiaomi_context_t *ctx)
 {
 	if ((ctx != NULL) && (ctx->flags.valid_record == 1U)) {
 		LOG_INF("T : %hd.%02hd °C [ %d ], H %hhu %%, bat %u mV",
-			ctx->record.temperature / 100,
-			ctx->record.temperature % 100,
-			ctx->record.temperature,
-			ctx->record.humidity,
-			ctx->record.battery);
+			ctx->measurements.temperature / 100,
+			ctx->measurements.temperature % 100,
+			ctx->measurements.temperature,
+			ctx->measurements.humidity,
+			ctx->measurements.battery);
 	} else {
 		LOG_INF("(%x) no valid measurements", (uint32_t)ctx);
 	}
@@ -236,9 +236,9 @@ static void prepare_device_session(xiaomi_context_t *ctx)
 	ctx->state = STATE_DISCOVERED;
 
 	ctx->conn = NULL;
-	ctx->record.temperature = 0;
-	ctx->record.humidity = 0U;
-	ctx->record.battery = 0U;
+	ctx->measurements.temperature = 0;
+	ctx->measurements.humidity = 0U;
+	ctx->measurements.humidity = 0U;
 	ctx->flags.valid_record = 0U;
 
 	k_sem_init(&ctx->sem, 1, 1);
@@ -248,7 +248,7 @@ static void reset_device_context(xiaomi_context_t *ctx)
 {
 	ctx->state = STATE_NONE;
 	ctx->write_count = 0U;
-	ctx->last_process = 0U;
+	ctx->last_measurement = 0U;
 	ctx->flags.enabled = 0U;
 	ctx->failure_count = 0U;
 
@@ -350,9 +350,9 @@ static void interpret_measurements(xiaomi_context_t *ctx, const uint8_t *data)
 {
 	const uint16_t uTemperature = data[0] | (data[1] << 8);
 
-	ctx->record.temperature = *((int16_t *)&uTemperature);
-	ctx->record.humidity = data[2];
-	ctx->record.battery = data[3] | (data[4] << 8);
+	ctx->measurements.temperature = *((int16_t *)&uTemperature);
+	ctx->measurements.humidity = data[2];
+	ctx->measurements.battery = data[3] | (data[4] << 8);
 }
 
 static uint8_t measurement_cb(struct bt_conn *conn,
@@ -370,7 +370,7 @@ static uint8_t measurement_cb(struct bt_conn *conn,
 
 	if ((length == 5U) && (memcmp(data, empty_data, length) != 0)) {
 		interpret_measurements(ctx, data);
-		ctx->record.uptime = get_uptime_sec();
+		ctx->last_measurement = get_uptime_sec();
 		ctx->flags.valid_record = 1U;
 		
 		disconnect = true;
@@ -585,7 +585,7 @@ static int trigger_measurements_retrieval(xiaomi_context_t *ctx)
 }
 
 static bool retrieve_measurements(xiaomi_context_t *ctx,
-				 xiaomi_record_t *rec)
+				  xiaomi_measurements_t *meas)
 {
 	bool success = false;
 	int ret;
@@ -596,8 +596,8 @@ static bool retrieve_measurements(xiaomi_context_t *ctx,
 		if (ret == 0) {
 			show_device_measurements(ctx);
 
-			if ((ctx->flags.valid_record == 1) && (rec != NULL)) {
-				memcpy(rec, &ctx->record, sizeof(xiaomi_record_t));
+			if ((ctx->flags.valid_record == 1) && (meas != NULL)) {
+				memcpy(meas, &ctx->measurements, sizeof(xiaomi_record_t));
 				success = true;
 			}
 		}
@@ -678,7 +678,7 @@ static void prepare_devices(void)
 			prepare_device_session(dev);
 		}
 	} else {
-		LOG_WRN("No devices found");
+		LOG_WRN("No devices found, count = %d", devices_count);
 	}
 }
 
@@ -713,11 +713,17 @@ void thread(void *_a, void *_b, void *_c)
 		     i++) {
 			bool success = retrieve_measurements(
 				&devices[i],
-				&dataframe->records[dataframe->count].data);
+				&dataframe->records[dataframe->count].measurements);
 			if (success == true) {
+				/* copy addr into record */
 				bt_addr_le_copy(
 					&dataframe->records[dataframe->count].addr,
 					&devices[i].addr);
+				
+				/* copy measurement time */
+				dataframe->records[dataframe->count].uptime =
+					devices[i].last_measurement;
+
 				dataframe->count++;
 			}
 		}
