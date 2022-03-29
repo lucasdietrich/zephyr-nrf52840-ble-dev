@@ -17,7 +17,7 @@
 
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(ble, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ble, LOG_LEVEL_INF);
 
 /*___________________________________________________________________________*/
 
@@ -43,6 +43,9 @@ K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0,
 #define XIAOMI_LYWSD03MMC_NAME_SIZE	(sizeof(XIAOMI_LYWSD03MMC_NAME) - 1)
 
 #define XIAOMI_MAX_DEVICES 15
+
+#define XIAOMI_POLL_PERIOD_MS 60000
+#define XIAOMI_SCAN_DURATION_MS 10000
 
 typedef enum {
 	STATE_NONE = 0,
@@ -641,7 +644,7 @@ static k_timeout_t get_scan_duration(uint8_t scan_type)
 {
 	ARG_UNUSED(scan_type);
 
-	k_timeout_t duration = K_SECONDS(20);
+	k_timeout_t duration = K_MSEC(XIAOMI_SCAN_DURATION_MS);
 
 	LOG_DBG("scan_duration = %u ms", k_ticks_to_ms_ceil32(duration.ticks));
 
@@ -682,6 +685,18 @@ static void prepare_devices(void)
 	}
 }
 
+static void wait_poll_period(uint32_t period_ms)
+{
+	static uint32_t last_poll = UINT32_MAX >> 1; /* -1 to force first poll */
+
+	uint32_t now = k_uptime_get_32();
+
+	while ((now - last_poll) < period_ms) {
+		k_sleep(K_SECONDS(1));
+		now = k_uptime_get_32();
+	}
+}
+
 void thread(void *_a, void *_b, void *_c)
 {
 	int ret;
@@ -689,6 +704,8 @@ void thread(void *_a, void *_b, void *_c)
 	initialize();
 
 	for (;;) {
+		wait_poll_period(XIAOMI_POLL_PERIOD_MS);
+
 		const uint8_t scan_type = get_scan_type();
 		const k_timeout_t scan_duration =
 			get_scan_duration(scan_type);
@@ -721,7 +738,7 @@ void thread(void *_a, void *_b, void *_c)
 					&devices[i].addr);
 				
 				/* copy measurement time */
-				dataframe->records[dataframe->count].uptime =
+				dataframe->records[dataframe->count].time =
 					devices[i].last_measurement;
 
 				dataframe->count++;
@@ -729,11 +746,11 @@ void thread(void *_a, void *_b, void *_c)
 		}
 
 		/* finalize frame */
-		dataframe->frame_time = get_uptime_sec();
+		dataframe->time = get_uptime_sec();
 		frame->data.size = sizeof(xiaomi_dataframe_t);
 
 		LOG_DBG("count = %u, frame_time = %u", 
-			dataframe->count, dataframe->frame_time);
+			dataframe->count, dataframe->time);
 
 		/* send frame */
 		ret = ipc_send_frame(frame);
@@ -743,5 +760,7 @@ void thread(void *_a, void *_b, void *_c)
 		}
 
 		LOG_DBG("===============================================================");
+
+		k_sleep(K_SECONDS(10));
 	}
 }
