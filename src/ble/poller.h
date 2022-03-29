@@ -14,6 +14,8 @@
 
 #include <zephyr.h>
 
+#include <bluetooth/bluetooth.h>
+
 // Xiaomi Mijia LYWSD03MMC
 
 #endif /* _BLE_POLLER_H_ */

@@ -66,6 +66,7 @@
         "ipc_service.h": "c",
         "algorithm": "c",
         "string": "c",
-        "string_view": "c"
+        "string_view": "c",
+        "ipc_frame.h": "c"
     }
 }

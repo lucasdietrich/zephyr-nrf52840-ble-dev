@@ -1,0 +1,9 @@
+mainmenu "xiaomi"
+
+config XIAOMI_MAX_DEVICES
+	int "Maximum XIAOMI devices supported"
+	default 15
+	help
+		Maximum XIAOMI devices supported.
+
+source "Kconfig.zephyr"

@@ -10,6 +10,12 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/addr.h>
 
+#include "../ipc_uart/ipc_frame.h"
+#include "../ipc_uart/ipc.h"
+
+#include "xiaomi_record.h"
+
+
 #include <logging/log.h>
 LOG_MODULE_REGISTER(ble, LOG_LEVEL_DBG);
 
@@ -28,7 +34,7 @@ K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0,
  * 1 : Always active scan
  * n : One active scan every n scans, others are passive
  */
-#define ACTIVE_SCAN_PERIODICITY 1
+#define ACTIVE_SCAN_PERIODICITY 3
 
 #define XIAOMI_MANUFACTURER_ADDR_STR "A4:C1:38:00:00:00"
 // #define XIAOMI_MANUFACTURER_ADDR ((bt_addr_t) { .val = { 0x00, 0x00, 0x00, 0x38, 0xC1, 0xA4 } })
@@ -36,7 +42,7 @@ K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0,
 #define XIAOMI_LYWSD03MMC_NAME "LYWSD03MMC"
 #define XIAOMI_LYWSD03MMC_NAME_SIZE	(sizeof(XIAOMI_LYWSD03MMC_NAME) - 1)
 
-#define XIAOMI_MAX_DEVICES 20
+#define XIAOMI_MAX_DEVICES 15
 
 typedef enum {
 	STATE_NONE = 0,
@@ -47,28 +53,79 @@ typedef enum {
 } xiaomi_state_t;
 
 typedef struct {
+	/**
+	 * @brief BLE Device address 
+	 */
 	bt_addr_le_t addr;
+
+	/**
+	 * @brief Number of measurements successfully retrieved
+	 */
+	uint32_t measurements_count;
+
+	/**
+	 * @brief Flags (internal/external)
+	 */
+	struct {
+		/**
+		 * @brief Tells if the measurements should be retrieved from the device
+		 */
+		uint32_t enabled: 1;
+
+		/**
+		 * @brief Tells if the measurements were retrieved successfully
+		 */
+		uint32_t valid_record: 1;
+	} flags;
+	
+	/**
+	 * @brief State of the device
+	 */
 	xiaomi_state_t state;
 
+	/**
+	 * @brief Internal semaphore
+	 */
 	struct k_sem sem;
-	struct bt_conn *conn;
-	
-	struct {
-		uint32_t uptime; 
-		
-		int16_t temperature; /* 1e-2 °C */
-		uint8_t humidity; /* 1 % */
-		uint16_t battery; /* 1 mV */
-		
-		bool valid;
-	} measurements;
 
+	/**
+	 * @brief Pointer to the ble connection
+	 */
+	struct bt_conn *conn;
+
+	/**
+	 * @brief Last retrieved record
+	 */
+	xiaomi_record_t record;
+
+	/**
+	 * @brief Write count on handler 0x38 in order to active 
+	 * the measurement availability.
+	 * 
+	 * Note: Not used anymore
+	 */
 	uint32_t write_count;
 
+	/**
+	 * @brief Time of the last attempt of measurements retrieval
+	 */
 	uint32_t last_process;
+
+	/**
+	 * @brief Number of times connection to the device failed. 
+	 * A scan of the device resets this value to 0.
+	 */
+	uint32_t failure_count;
 } xiaomi_context_t;
 
+/**
+ * @brief Table of all xiaomi devices, this table is filled by the scan process
+ */
 xiaomi_context_t devices[XIAOMI_MAX_DEVICES];
+
+/**
+ * @brief Nmber of devices in the table "devices"
+ */
 uint8_t devices_count = 0U;
 
 void activate_cb(struct bt_conn *conn,
@@ -98,16 +155,52 @@ static struct bt_gatt_read_params read_params = {
 
 static void show_device_measurements(xiaomi_context_t *ctx)
 {
-	if ((ctx != NULL) && (ctx->measurements.valid == true)) {
+	if ((ctx != NULL) && (ctx->flags.valid_record == 1U)) {
 		LOG_INF("T : %hd.%02hd °C [ %d ], H %hhu %%, bat %u mV",
-			ctx->measurements.temperature / 100,
-			ctx->measurements.temperature % 100,
-			ctx->measurements.temperature,
-			ctx->measurements.humidity,
-			ctx->measurements.battery);
+			ctx->record.temperature / 100,
+			ctx->record.temperature % 100,
+			ctx->record.temperature,
+			ctx->record.humidity,
+			ctx->record.battery);
 	} else {
 		LOG_INF("(%x) no valid measurements", (uint32_t)ctx);
 	}
+}
+
+static const char *state_to_str(xiaomi_state_t state)
+{
+	switch (state) {
+	case STATE_NONE:
+		return "STATE_NONE";
+	case STATE_DISCOVERED:
+		return "STATE_DISCOVERED";
+	case STATE_CONNECTED:
+		return "STATE_CONNECTED";
+	case STATE_DATA:
+		return "STATE_DATA";
+	case STATE_DISCONNECTED:
+		return "STATE_DISCONNECTED";
+	default:
+		return "<unknown>";
+	}
+}
+
+static const char *scan_type_to_str(uint8_t scan_type) {
+	switch (scan_type) {
+	case BT_LE_SCAN_TYPE_PASSIVE:
+		return "BT_LE_SCAN_TYPE_PASSIVE";
+	case BT_LE_SCAN_TYPE_ACTIVE:
+		return "BT_LE_SCAN_TYPE_ACTIVE";
+	default:
+		return "<unknown scan type>";
+	}
+}
+
+static inline uint32_t get_uptime_sec(void)
+{
+	int64_t now = k_uptime_get();
+
+	return (uint32_t)(now / MSEC_PER_SEC);
 }
 
 /*___________________________________________________________________________*/
@@ -138,23 +231,35 @@ xiaomi_context_t *find_device_context(const bt_addr_le_t *addr)
 	return dev;
 }
 
+static void prepare_device_session(xiaomi_context_t *ctx)
+{
+	ctx->state = STATE_DISCOVERED;
+
+	ctx->conn = NULL;
+	ctx->record.temperature = 0;
+	ctx->record.humidity = 0U;
+	ctx->record.battery = 0U;
+	ctx->flags.valid_record = 0U;
+
+	k_sem_init(&ctx->sem, 1, 1);
+}
+
 static void reset_device_context(xiaomi_context_t *ctx)
 {
 	ctx->state = STATE_NONE;
-	ctx->conn = NULL;
-	ctx->measurements.temperature = 0;
-	ctx->measurements.humidity = 0U;
-	ctx->measurements.battery = 0U;
 	ctx->write_count = 0U;
 	ctx->last_process = 0U;
-	ctx->measurements.valid = false;
+	ctx->flags.enabled = 0U;
+	ctx->failure_count = 0U;
 
-	k_sem_init(&ctx->sem, 1, 1);
+	prepare_device_session(ctx);
 }
 
 static void register_device(const bt_addr_le_t *addr)
 {
 	xiaomi_context_t *device = find_device_context(addr);
+
+	/* device not already registered, we add it */
 	if (device == NULL) {
 		if (devices_count >= XIAOMI_MAX_DEVICES) {
 			LOG_ERR("Too many devices (%u)", devices_count);
@@ -165,11 +270,11 @@ static void register_device(const bt_addr_le_t *addr)
 		devices_count++;
 
 		bt_addr_le_copy(&device->addr, addr);
+
+		reset_device_context(device);
 	}
 
-	reset_device_context(device);
-
-	device->state = STATE_DISCOVERED;
+	device->flags.enabled = 1U;
 }
 
 /*___________________________________________________________________________*/
@@ -245,9 +350,9 @@ static void interpret_measurements(xiaomi_context_t *ctx, const uint8_t *data)
 {
 	const uint16_t uTemperature = data[0] | (data[1] << 8);
 
-	ctx->measurements.temperature = *((int16_t *)&uTemperature);
-	ctx->measurements.humidity = data[2];
-	ctx->measurements.battery = data[3] | (data[4] << 8);
+	ctx->record.temperature = *((int16_t *)&uTemperature);
+	ctx->record.humidity = data[2];
+	ctx->record.battery = data[3] | (data[4] << 8);
 }
 
 static uint8_t measurement_cb(struct bt_conn *conn,
@@ -265,6 +370,9 @@ static uint8_t measurement_cb(struct bt_conn *conn,
 
 	if ((length == 5U) && (memcmp(data, empty_data, length) != 0)) {
 		interpret_measurements(ctx, data);
+		ctx->record.uptime = get_uptime_sec();
+		ctx->flags.valid_record = 1U;
+		
 		disconnect = true;
 	} else if ((length == 3U) && (ctx->write_count != 5)) {
 		LOG_WRN("Invalid measurement data length %u", length);
@@ -413,7 +521,7 @@ static int scan_xiaomi_devices(uint8_t scan_type, k_timeout_t timeout)
 	return ret;
 }
 
-static const struct bt_conn_le_create_param conn_create_param = {
+static const struct bt_conn_le_create_param conn_le_create_param = {
 	.options = BT_CONN_LE_OPT_NONE,
 	.interval = BT_GAP_SCAN_FAST_INTERVAL,
 	.window = BT_GAP_SCAN_FAST_INTERVAL,
@@ -422,35 +530,53 @@ static const struct bt_conn_le_create_param conn_create_param = {
 	.timeout = 0,
 };
 
-static const struct bt_le_conn_param conn_param = BT_LE_CONN_PARAM_INIT(
+static const struct bt_le_conn_param conn_le_param = BT_LE_CONN_PARAM_INIT(
 	BT_GAP_INIT_CONN_INT_MIN, /* Minimum Connection Interval (N * 1.25 ms) */
 	BT_GAP_INIT_CONN_INT_MAX, /* Maximum Connection Interval (N * 1.25 ms) */
 	0, /* Connection Latency */
 	1000); /* Supervision Timeout (N * 10 ms), default 400 */
 
-static int retrieve_xiaomi_measurements(xiaomi_context_t *ctx)
+/**
+ * @brief 
+ * 
+ * @param ctx 
+ * @return int 
+ */
+static int trigger_measurements_retrieval(xiaomi_context_t *ctx)
 {
 	int ret;
 	
 	LOG_DBG("ctx = %x", (uint32_t) ctx);
 
 	if (ctx == NULL) {
+		LOG_ERR("(%x) ctx is NULL", (uint32_t)ctx);
+		return -EINVAL;
+	}
+
+	if (ctx->state != STATE_DISCOVERED) {
+		LOG_ERR("(%x) Invalid state %s", (uint32_t)ctx,
+			log_strdup(state_to_str(ctx->state)));
+		return -EINVAL;
+	}
+
+	if (ctx->flags.enabled != 1U) {
+		LOG_ERR("(%x) Device is not enabled", (uint32_t)ctx);
 		return -EINVAL;
 	}
 
 	ret = k_sem_take(&ctx->sem, K_NO_WAIT);
 	if (ret != 0) {
 		/* operation already pending */
-		LOG_ERR("(%x) Operation already pending", (uint32_t) ctx);
+		LOG_ERR("(%x) Operation already pending", (uint32_t)ctx);
 		return ret;
 	}
 
 	ret = bt_conn_le_create(&ctx->addr,
-				BT_CONN_LE_CREATE_CONN,
-				BT_LE_CONN_PARAM_DEFAULT,
+				&conn_le_create_param,
+				&conn_le_param,
 				&ctx->conn);
 	if (ret < 0) {
-		LOG_ERR("(%x) Failed to create connection (ret %d)", 
+		LOG_ERR("(%x) Failed to create connection (ret %d)",
 			(uint32_t)ctx, ret);
 		return ret;
 	}
@@ -458,17 +584,35 @@ static int retrieve_xiaomi_measurements(xiaomi_context_t *ctx)
 	return 0;
 }
 
-static const char *get_scan_type_str(uint8_t scan_type) {
-	switch (scan_type) {
-	case BT_LE_SCAN_TYPE_PASSIVE:
-		return "BT_LE_SCAN_TYPE_PASSIVE";
-	case BT_LE_SCAN_TYPE_ACTIVE:
-		return "BT_LE_SCAN_TYPE_ACTIVE";
-	default:
-		return "<unknown scan type>";
+static bool retrieve_measurements(xiaomi_context_t *ctx,
+				 xiaomi_record_t *rec)
+{
+	bool success = false;
+	int ret;
+	
+	ret = trigger_measurements_retrieval(ctx);
+	if (ret == 0) {
+		ret = k_sem_take(&ctx->sem, K_FOREVER);
+		if (ret == 0) {
+			show_device_measurements(ctx);
+
+			if ((ctx->flags.valid_record == 1) && (rec != NULL)) {
+				memcpy(rec, &ctx->record, sizeof(xiaomi_record_t));
+				success = true;
+			}
+		}
 	}
+
+	return success;
 }
 
+/**
+ * @brief Get the type for the next scan.
+ * 
+ * Note: First scan is always active.
+ * 
+ * @return uint8_t 
+ */
 static uint8_t get_scan_type(void)
 {
 	uint8_t scan_type = BT_LE_SCAN_TYPE_PASSIVE;
@@ -476,30 +620,53 @@ static uint8_t get_scan_type(void)
 #if ACTIVE_SCAN_PERIODICITY != 0
 	static uint32_t remaining = ACTIVE_SCAN_PERIODICITY;
 
-	if (remaining <= 1U) {
+	/* first scan is always active */
+	if (remaining == ACTIVE_SCAN_PERIODICITY) {
 		scan_type = BT_LE_SCAN_TYPE_ACTIVE;
+	}
+
+	if (remaining <= 1U) {
 		remaining = ACTIVE_SCAN_PERIODICITY;
 	} else {
 		remaining--;
 	}
 #endif /* ACTIVE_SCAN_PERIODICITY == 0 */
 
-	LOG_DBG("scan_type = %s", log_strdup(get_scan_type_str(scan_type)));
+	LOG_DBG("scan_type = %s", log_strdup(scan_type_to_str(scan_type)));
 
 	return scan_type;
 }
 
-static struct k_poll_event events[XIAOMI_MAX_DEVICES];
-
-void thread(void *_a, void *_b, void *_c)
+static k_timeout_t get_scan_duration(uint8_t scan_type)
 {
-	initialize();
+	ARG_UNUSED(scan_type);
 
-	for (;;) {
-		const uint8_t iteration_scan_type = get_scan_type();
-		scan_xiaomi_devices(iteration_scan_type, K_SECONDS(20));
+	k_timeout_t duration = K_SECONDS(20);
 
-		// list found devices
+	LOG_DBG("scan_duration = %u ms", k_ticks_to_ms_ceil32(duration.ticks));
+
+	return duration;
+}
+
+ipc_frame_t *frame;
+
+static int clear_data_frame(xiaomi_dataframe_t *dataframe)
+{
+	if (dataframe == NULL) {
+		return -EINVAL;
+	}
+
+	memset(dataframe, 0, sizeof(xiaomi_dataframe_t));
+
+	return 0;
+}
+
+static void prepare_devices(void)
+{
+	if (devices_count > 0) {
+		LOG_INF("Preparing %d devices", devices_count);
+
+		/* list found devices */
 		for (uint32_t i = 0; i < devices_count; i++) {
 			xiaomi_context_t *dev = &devices[i];
 
@@ -507,46 +674,68 @@ void thread(void *_a, void *_b, void *_c)
 			bt_addr_le_to_str(&dev->addr, addr_str, sizeof(addr_str));
 
 			LOG_INF("Device %u: %s", i, log_strdup(addr_str));
+
+			prepare_device_session(dev);
+		}
+	} else {
+		LOG_WRN("No devices found");
+	}
+}
+
+void thread(void *_a, void *_b, void *_c)
+{
+	int ret;
+
+	initialize();
+
+	for (;;) {
+		const uint8_t scan_type = get_scan_type();
+		const k_timeout_t scan_duration =
+			get_scan_duration(scan_type);
+		scan_xiaomi_devices(scan_type, scan_duration);
+
+		/* prepare devices */
+		prepare_devices();
+
+		/* initialize frame */
+		ret = ipc_allocate_frame(&frame);
+		if (ret != 0) {
+			LOG_ERR("Failed to allocate frame (ret %d)", ret);
+			continue;
 		}
 
-		uint32_t devices_remaining = devices_count;
+		xiaomi_dataframe_t *dataframe = (xiaomi_dataframe_t *)frame->data.buf;
+		clear_data_frame(dataframe);
 
-		/* start measurements for all devices */
-		for (uint32_t i = 0; i < devices_count; i++) {
-			xiaomi_context_t *device = &devices[i];
-
-			retrieve_xiaomi_measurements(device);
-
-			k_poll_event_init(&events[i], K_POLL_TYPE_SEM_AVAILABLE,
-					  K_POLL_MODE_NOTIFY_ONLY, &device->sem);
-		}
-
-		while (devices_remaining > 0) {
-			LOG_DBG("Polling for %u remaining devices over %u",
-				devices_remaining, devices_count);
-			int ret = k_poll(events, devices_remaining, K_FOREVER);
-			// iterate over all events and take semaphores (start from the end)
-			for (int i = devices_remaining - 1; i >= 0; i--) {
-				if (events[i].state == K_POLL_STATE_SEM_AVAILABLE) {
-					xiaomi_context_t *device = &devices[i];
-
-					ret = k_sem_take(&device->sem, K_NO_WAIT);
-					if (ret == 0) {
-						devices_remaining--;
-					}
-
-					// shift next events to the left
-					for (int j = i; j < devices_remaining; j++) {
-						events[j] = events[j + 1];
-					}
-				}
+		/* poll all devices to retrieve measurements */
+		for (uint32_t i = 0; i <
+		     MIN(devices_count, ARRAY_SIZE(dataframe->records));
+		     i++) {
+			bool success = retrieve_measurements(
+				&devices[i],
+				&dataframe->records[dataframe->count].data);
+			if (success == true) {
+				bt_addr_le_copy(
+					&dataframe->records[dataframe->count].addr,
+					&devices[i].addr);
+				dataframe->count++;
 			}
 		}
 
-		/* we have all the semaphores, we iterate over all devices and
-		 * retrieve measurements */
-		for (uint32_t i = 0; i < devices_count; i++) {
-			show_device_measurements(&devices[i]);
+		/* finalize frame */
+		dataframe->frame_time = get_uptime_sec();
+		frame->data.size = sizeof(xiaomi_dataframe_t);
+
+		LOG_DBG("count = %u, frame_time = %u", 
+			dataframe->count, dataframe->frame_time);
+
+		/* send frame */
+		ret = ipc_send_frame(frame);
+		if (ret != 0) {
+			LOG_ERR("Failed to send frame (ret %d)", ret);
+			continue;
 		}
+
+		LOG_DBG("===============================================================");
 	}
 }
