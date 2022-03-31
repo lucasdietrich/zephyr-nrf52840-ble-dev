@@ -34,7 +34,7 @@ K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0,
  * 1 : Always active scan
  * n : One active scan every n scans, others are passive
  */
-#define ACTIVE_SCAN_PERIODICITY 3
+#define ACTIVE_SCAN_PERIODICITY 5
 
 #define XIAOMI_MANUFACTURER_ADDR_STR "A4:C1:38:00:00:00"
 // #define XIAOMI_MANUFACTURER_ADDR ((bt_addr_t) { .val = { 0x00, 0x00, 0x00, 0x38, 0xC1, 0xA4 } })
@@ -44,8 +44,8 @@ K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0,
 
 #define XIAOMI_MAX_DEVICES 15
 
-#define XIAOMI_POLL_PERIOD_MS 60000
-#define XIAOMI_SCAN_DURATION_MS 10000
+#define XIAOMI_POLL_PERIOD_MS (5 * 60 * MSEC_PER_SEC)
+#define XIAOMI_SCAN_DURATION_MS (10 * MSEC_PER_SEC)
 
 typedef enum {
 	STATE_NONE = 0,
@@ -695,6 +695,8 @@ static void wait_poll_period(uint32_t period_ms)
 		k_sleep(K_SECONDS(1));
 		now = k_uptime_get_32();
 	}
+
+	last_poll = now;
 }
 
 void thread(void *_a, void *_b, void *_c)
@@ -760,7 +762,5 @@ void thread(void *_a, void *_b, void *_c)
 		}
 
 		LOG_DBG("===============================================================");
-
-		k_sleep(K_SECONDS(10));
 	}
 }
