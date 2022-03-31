@@ -27,6 +27,8 @@ K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0,
 
 /*___________________________________________________________________________*/
 
+#define XIAOMI_MAX_DEVICES 15
+
 /**
  * @brief What frequency the scan should be performed passivly or actively
  * 
@@ -36,16 +38,15 @@ K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0,
  */
 #define ACTIVE_SCAN_PERIODICITY 5
 
+#define XIAOMI_SCAN_DURATION_MS (20 * MSEC_PER_SEC)
+
+#define XIAOMI_POLL_PERIOD_MS (3 * 60 * MSEC_PER_SEC)
+
 #define XIAOMI_MANUFACTURER_ADDR_STR "A4:C1:38:00:00:00"
 // #define XIAOMI_MANUFACTURER_ADDR ((bt_addr_t) { .val = { 0x00, 0x00, 0x00, 0x38, 0xC1, 0xA4 } })
 
 #define XIAOMI_LYWSD03MMC_NAME "LYWSD03MMC"
 #define XIAOMI_LYWSD03MMC_NAME_SIZE	(sizeof(XIAOMI_LYWSD03MMC_NAME) - 1)
-
-#define XIAOMI_MAX_DEVICES 15
-
-#define XIAOMI_POLL_PERIOD_MS (5 * 60 * MSEC_PER_SEC)
-#define XIAOMI_SCAN_DURATION_MS (10 * MSEC_PER_SEC)
 
 typedef enum {
 	STATE_NONE = 0,
