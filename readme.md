@@ -1,80 +1,115 @@
-# Application
+# BLE Xiaomi Mijia measurements collector application
 
-## Development
+This application discover and retrieve measurements of Xiaomi Mijia `LYWSD03MMC` devices, which are Bluetooth Low Energy (BLE) devices.
 
-Generated files :
+The measurements are embedded into records which are sent over the UART1 interface.
+
+## Getting started
+
+You will need :
+- Xiaomi Mijia `LYWSD03MMC` devices with firmware version `1.0.0_0130`.
+  - Firmware can be upgraded using "Xiaomi Home" app.
+- nrf52840 based board.
+- Zephyr RTOS toolchain.
+
+Workspace can be created and application can be imported using `west` commands : 
+- `west init -m https://github.com/lucasdietrich/zephyr-nrf52840-ble-dev --mr main myworkspace`
+- `west update`
+- Build project with `west build` command.
+- Flash the application with `west -v flash -r nrfjprog --snr XXX` command, where XXX is the serial number of the board.
+
+## Measurements
+
+Measurements collected from Xiaomi devices are :
+
+| Symbol | Measurement   | Unit | Maximum resolution |
+| ------ | ------------- | ---- | ------------------ |
+| T      | Temperature   | °C   | 1,00E-02           |
+| H      | Humidity      | %    | 1,00E+00           |
+| B      | Battery Level | V    | 1,00E-03           |
+
+Measurements are retrieved periodically from devices.
+
+## IPC Protocol (UART)
+The IPC protocol is based on message of fixed length. IPC frame format is the following one :
+
+UART configuration is  
+
+| Option          | Value              |
+| --------------- | ------------------ |
+| Baudrate        | 1000000            |
+| TX pin          | p1.02              |
+| RX pin          | p1.01 (unecessary) |
+| Parity          | NONE               |
+| Stop bits       | 1                  |
+| Data bits       | 8                  |
+| RTS/CTS         | off                |
+| HW flow control | off                |
+
+Dataframe format is :
+
+![](./pics/ipc_frame_formats_white_bg.png)
+
+## Zephyr application-specific configuration options
+
+| Configuration option                     | Description                                    | Unit    | Default Value |
+| ---------------------------------------- | ---------------------------------------------- | ------- | ------------- |
+| CONFIG\_XIAOMI\_MAX\_DEVICES             | Size of the table containing Xiaomi Devices    |         |               |
+| CONFIG\_XIAOMI\_POLL\_INTERVAL           | What interval measurements should be retrieved | Seconds | 180           |
+| CONFIG\_ACTIVE\_SCAN\_DURATION           | Active scan duration                           | Seconds | 20            |
+| CONFIG\_ACTIVE\_SCAN\_PERIODICITY        | Active scan frequency                          | Ratio   | 3             |
+| CONFIG\_PASSIVE\_SCAN\_MINUMUM\_DURATION | Minimum duration for a passive scan            | Seconds | 30            |
+
+## Expected console output
+
+```
+[01:01:37.904,327] <inf> ble: Preparing 4 devices
+[01:01:37.904,510] <inf> ble: Device 0: A4:C1:38:0A:1E:38 (public)
+[01:01:37.904,663] <inf> ble: Device 1: A4:C1:38:68:05:63 (public)
+[01:01:37.904,815] <inf> ble: Device 2: A4:C1:38:A7:30:C4 (public)
+[01:01:37.904,968] <inf> ble: Device 3: A4:C1:38:8D:BA:B4 (public)
+[01:01:39.084,136] <inf> ble: (20000cc0) Connected: A4:C1:38:0A:1E:38 (public)
+[01:01:39.335,388] <err> ble: Failed to read measurements (ret -128)
+[01:01:39.335,632] <inf> ble: (20000cc0) Disconnected: A4:C1:38:0A:1E:38 (public) (reason 0x3e)
+[01:01:39.335,632] <inf> ble: (20002ca8) no valid measurements
+[01:01:42.014,190] <inf> ble: (20000cc0) Connected: A4:C1:38:68:05:63 (public)
+[01:01:42.165,710] <inf> ble: (20000cc0) Disconnected: A4:C1:38:68:05:63 (public) (reason 0x16)
+[01:01:42.165,740] <inf> ble: T : 23.64 °C [ 2364 ], H 36 %, bat 2900 mV
+[01:01:43.441,986] <inf> ble: (20000cc0) Connected: A4:C1:38:A7:30:C4 (public)
+[01:01:43.643,524] <inf> ble: (20000cc0) Disconnected: A4:C1:38:A7:30:C4 (public) (reason 0x16)
+[01:01:43.643,554] <inf> ble: T : 21.79 °C [ 2179 ], H 39 %, bat 2862 mV
+[01:01:44.872,558] <inf> ble: (20000cc0) Connected: A4:C1:38:8D:BA:B4 (public)
+[01:01:45.024,078] <inf> ble: (20000cc0) Disconnected: A4:C1:38:8D:BA:B4 (public) (reason 0x16)
+[01:01:45.024,108] <inf> ble: T : 19.77 °C [ 1977 ], H 43 %, bat 2866 mV
+[01:01:45.024,719] <inf> ipc: IPC TX frame: 274 B, seq = 26, data size = 248, sfd = aaaaaaaa, efd = 55555555 crc32=933b2ee6
+```
+
+## VS Code
+
+This project is fully support by VS Code.
+
+You might need to change tasks environment variables to match your setup in `.vscode/tasks.json` file.
+```json
+    "options": {
+        "env": {
+            "venvPath": "../.venv",
+            "westPath": "../.venv/bin/west",
+            "netToolsPath": "../tools/net-tools",
+            "serialNumber": "683339521"
+        }
+    },
+```
+
+- You might to install `python` with required packages : 
+  - `python -m virtualenv myworkspace/venv`
+  - `source myworkspace/venv/bin/activate`
+  - `pip install -r myworkspace/zephyr/scripts/requirements.txt`
+
+- Monitor console `screen /dev/ttyACM0 115200`
+- 
+## Sources / links :
+
+- [lucasdietrich/AVRTOS : src/examples/zephyr-dev-usart-tool/main.c](https://github.com/lucasdietrich/AVRTOS/blob/drivers/src/examples/zephyr-dev-usart-tool/main.c)
 - [./build/zephyr/zephyr.dts](./build/zephyr/zephyr.dts)
 - [./build/zephyr/include/generated/autoconf.h](./build/zephyr/include/generated/autoconf.h)
-
-
-## UART
-
-Demo with [**github.com/lucasdietrich/AVRTOS : drivers/UART**](https://github.com/lucasdietrich/AVRTOS/tree/2b78c34723f1e4804400c19f88b854b5bdb1cdef)
-
-Sources :
-- [Zephyr RTOS - API Reference - UART](https://docs.zephyrproject.org/latest/reference/peripherals/uart.html#uart-async-api)
-- [too1 / ncs-uart-async-count-rx/src/main.c](https://github.com/too1/ncs-uart-async-count-rx/blob/master/src/main.c)
-
-Expected output :
-```
-[00:02:53.037,017] <dbg> ipc.ipc_uart_cb: evt->type = 2
-[00:02:53.057,647] <dbg> ipc.ipc_uart_cb: evt->type = 4
-[00:02:53.078,277] <dbg> ipc.ipc_uart_cb: evt->type = 3
-[00:02:53.098,907] <dbg> ipc.IPC message received
-                             68 69 6a 6b 6c 6d 6e 6f  70 71 72 73 74 75 76 77 |hijklmno pqrstuvw
-                             78 79 7a 61 62 63 64 65                          |xyzabcde
-[00:02:53.339,202] <dbg> ipc.ipc_uart_cb: evt->type = 2
-[00:02:53.359,863] <dbg> ipc.IPC message received
-                             66 67                                            |fg
-```
-
-## BLE
-
 - [**Xiaomi Mijia LYWSD03MMC : Récupérer les données du capteur sur un Raspberry Pi avec gatttool**](https://www.fanjoe.be/?p=3911)
-
-### Devices
-
-| Name | MAC |
-| --- | --- |
-| `nrf9160dk_nrf52840` - SN `960050029` | `FA:76:2E:BD:9C:BF` |
-| `nrf52840dk_nrf52840` - SN `683339521` | `D3:5F:A1:2E:37:92` |
-| `nrf52840dk_nrf52840` - SN `683624946` | Sniffer |
-| Xiaomi LYWSD03MMC - `??` | `A4:C1:38:68:05:63` |
-| Xiaomi LYWSD03MMC - `Lucas` | `A4:C1:38:A7:30:C4` |
-| Xiaomi LYWSD03MMC - `Salon` | `A4:C1:38:3C:D3:21` |
-
-### Comments
-
-- `GATT Declarations 0x2800 Primary Service`
-
-### Expected output
-
-```
-*** Booting Zephyr OS build zephyr-v2.7.1  ***
-[00:00:00.397,644] <inf> main: Starting Observer 0
-[00:00:00.399,322] <inf> bt_hci_core: HW Platform: Nordic Semiconductor (0x0002)
-[00:00:00.399,353] <inf> bt_hci_core: HW Variant: nRF52x (0x0002)
-[00:00:00.399,353] <inf> bt_hci_core: Firmware: Standard Bluetooth controller (0x00) Version 2.7 Build 1
-[00:00:00.399,993] <inf> bt_hci_core: Identity: D3:5F:A1:2E:37:92 (random)
-[00:00:00.399,993] <inf> bt_hci_core: HCI: version 5.3 (0x0c) revision 0x0000, manufacturer 0x05f1
-[00:00:00.399,993] <inf> bt_hci_core: LMP: version 5.3 (0x0c) subver 0xffff
-[00:00:00.399,993] <inf> main: Bluetooth initialized 0
-[00:00:00.400,390] <inf> main: Scanning... 0
-[00:00:00.419,494] <inf> main: [ CLOSE ] 0
-[00:00:00.419,647] <inf> main: Device found: FA:76:2E:BD:9C:BF (random) (RSSI -36) ad len = 11
-[00:00:00.536,895] <inf> main: Device found: A4:C1:38:0A:1E:38 (public) (RSSI -60) ad len = 21
-[00:00:00.772,552] <inf> main: [ CLOSE ] 0
-[00:00:00.772,705] <inf> main: Device found: 7F:DB:8C:8A:99:4A (random) (RSSI -47) ad len = 29
-[00:00:02.818,481] <inf> main: [ CLOSE ] 0
-[00:00:02.818,634] <inf> main: Device found: A4:C1:38:A7:30:C4 (public) (RSSI -33) ad len = 19
-[00:00:04.374,938] <inf> main: [ CLOSE ] 0
-[00:00:04.375,122] <inf> main: Device found: 5E:FB:2C:4D:5A:7C (random) (RSSI -47) ad len = 29
-[00:00:05.400,665] <inf> main: bt_le_scan_stop = 0
-[00:00:05.400,665] <inf> main: Found 5 devices
-[00:00:05.401,245] <inf> main: Main wait ... 0
-[00:00:06.185,729] <inf> main: Connected: A4:C1:38:A7:30:C4 (public)
-[00:00:09.948,272] <inf> main: Discover complete 0
-[00:00:10.008,270] <inf> main: data
-                               43 09 27 56 0a                                   |C.'V.
-[00:00:10.008,270] <inf> main: T : 23.71 °C [ 2371 ], H 39 %, bat 2646 mV
-```

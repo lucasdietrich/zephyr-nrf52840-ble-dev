@@ -9,8 +9,8 @@
  * 
  */
 
-#ifndef _BLE_POLLER_H_
-#define _BLE_POLLER_H_
+#ifndef _BLE_COLLECTOR_H_
+#define _BLE_COLLECTOR_H_
 
 #include <zephyr.h>
 
@@ -18,4 +18,4 @@
 
 // Xiaomi Mijia LYWSD03MMC
 
-#endif /* _BLE_POLLER_H_ */
+#endif /* _BLE_COLLECTOR_H_ */
