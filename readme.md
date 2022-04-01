@@ -1,6 +1,6 @@
 # BLE Xiaomi Mijia measurements collector application
 
-This nrf52840 application scans and retrieves measurements of Xiaomi Mijia `LYWSD03MMC` devices, which are Bluetooth Low Energy (BLE) devices.
+This nrf52840 application scans and retrieves measurements from Xiaomi Mijia `LYWSD03MMC` devices, which are Bluetooth Low Energy (BLE) devices.
 
 The measurements are embedded into records which are sent over the UART1 interface.
 
