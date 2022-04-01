@@ -27,21 +27,6 @@ K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0,
 
 /*___________________________________________________________________________*/
 
-#define XIAOMI_MAX_DEVICES 15
-
-/**
- * @brief What frequency the scan should be performed passivly or actively
- * 
- * 0 : Passive scan
- * 1 : Always active scan
- * n : One active scan every n scans, others are passive
- */
-#define ACTIVE_SCAN_PERIODICITY 5
-
-#define XIAOMI_SCAN_DURATION_MS (20 * MSEC_PER_SEC)
-
-#define XIAOMI_POLL_PERIOD_MS (3 * 60 * MSEC_PER_SEC)
-
 #define XIAOMI_MANUFACTURER_ADDR_STR "A4:C1:38:00:00:00"
 // #define XIAOMI_MANUFACTURER_ADDR ((bt_addr_t) { .val = { 0x00, 0x00, 0x00, 0x38, 0xC1, 0xA4 } })
 
@@ -125,7 +110,7 @@ typedef struct {
 /**
  * @brief Table of all xiaomi devices, this table is filled by the scan process
  */
-xiaomi_context_t devices[XIAOMI_MAX_DEVICES];
+xiaomi_context_t devices[CONFIG_XIAOMI_MAX_DEVICES];
 
 /**
  * @brief Nmber of devices in the table "devices"
@@ -265,7 +250,7 @@ static void register_device(const bt_addr_le_t *addr)
 
 	/* device not already registered, we add it */
 	if (device == NULL) {
-		if (devices_count >= XIAOMI_MAX_DEVICES) {
+		if (devices_count >= CONFIG_XIAOMI_MAX_DEVICES) {
 			LOG_ERR("Too many devices (%u)", devices_count);
 			return;
 		}
@@ -297,7 +282,8 @@ static int initialize(void)
 	return 0;
 }
 
-static bool bt_addr_manufacturer_match(const bt_addr_t *addr, const bt_addr_t *mf_prefix)
+static bool bt_addr_manufacturer_match(const bt_addr_t *addr,
+				       const bt_addr_t *mf_prefix)
 {
 	return memcmp(&addr->val[3], &mf_prefix->val[3], 3U) == 0;
 }
@@ -493,11 +479,13 @@ static void device_found(const bt_addr_le_t *addr,
 	}
 }
 
-static int scan_xiaomi_devices(uint8_t scan_type, k_timeout_t timeout)
+
+static int scan(uint8_t scan_type, k_timeout_t timeout)
 {
 	int ret;
 
-	if ((scan_type != BT_LE_SCAN_TYPE_PASSIVE) && (scan_type != BT_LE_SCAN_TYPE_ACTIVE)) {
+	if ((scan_type != BT_LE_SCAN_TYPE_PASSIVE) && 
+	    (scan_type != BT_LE_SCAN_TYPE_ACTIVE)) {
 		LOG_ERR("Invalid scan type %u", scan_type);
 		return -EINVAL;
 	}
@@ -515,12 +503,18 @@ static int scan_xiaomi_devices(uint8_t scan_type, k_timeout_t timeout)
 		return ret;
 	}
 
+	LOG_DBG("%s started for %u seconds",
+		log_strdup(scan_type_to_str(scan_type)),
+		k_ticks_to_ms_near32(timeout.ticks) / MSEC_PER_SEC);
+
 	k_sleep(timeout);
 
 	ret = bt_le_scan_stop();
 	if (ret != 0) {
 		LOG_ERR("Stopping scanning failed (ret %d)", ret);
 	}
+
+	LOG_DBG("%s stopped", log_strdup(scan_type_to_str(scan_type)));
 
 	return ret;
 }
@@ -601,7 +595,9 @@ static bool retrieve_measurements(xiaomi_context_t *ctx,
 			show_device_measurements(ctx);
 
 			if ((ctx->flags.valid_record == 1) && (meas != NULL)) {
-				memcpy(meas, &ctx->measurements, sizeof(xiaomi_record_t));
+				memcpy(meas,
+				       &ctx->measurements,
+				       sizeof(xiaomi_record_t));
 				success = true;
 			}
 		}
@@ -621,34 +617,46 @@ static uint8_t get_scan_type(void)
 {
 	uint8_t scan_type = BT_LE_SCAN_TYPE_PASSIVE;
 
-#if ACTIVE_SCAN_PERIODICITY != 0
-	static uint32_t remaining = ACTIVE_SCAN_PERIODICITY;
+#if CONFIG_ACTIVE_SCAN_PERIODICITY != 0
+	static uint32_t remaining = CONFIG_ACTIVE_SCAN_PERIODICITY;
 
 	/* first scan is always active */
-	if (remaining == ACTIVE_SCAN_PERIODICITY) {
+	if (remaining == CONFIG_ACTIVE_SCAN_PERIODICITY) {
 		scan_type = BT_LE_SCAN_TYPE_ACTIVE;
 	}
 
 	if (remaining <= 1U) {
-		remaining = ACTIVE_SCAN_PERIODICITY;
+		remaining = CONFIG_ACTIVE_SCAN_PERIODICITY;
 	} else {
 		remaining--;
 	}
-#endif /* ACTIVE_SCAN_PERIODICITY == 0 */
+#endif /* CONFIG_ACTIVE_SCAN_PERIODICITY == 0 */
 
 	LOG_DBG("scan_type = %s", log_strdup(scan_type_to_str(scan_type)));
 
 	return scan_type;
 }
 
-static k_timeout_t get_scan_duration(uint8_t scan_type)
+/**
+ * @brief Get the scan duration for the given scan_type (in seconds)
+ * 
+ * @param scan_type 
+ * @return uint32_t 
+ */
+static uint32_t get_scan_duration(uint8_t scan_type)
 {
-	ARG_UNUSED(scan_type);
+	uint32_t duration = 0U;
 
-	k_timeout_t duration = K_MSEC(XIAOMI_SCAN_DURATION_MS);
-
-	LOG_DBG("scan_duration = %u ms", k_ticks_to_ms_ceil32(duration.ticks));
-
+	switch (scan_type) {
+	case BT_LE_SCAN_TYPE_PASSIVE:
+		duration = CONFIG_PASSIVE_SCAN_MINUMUM_DURATION;
+		break;
+	case BT_LE_SCAN_TYPE_ACTIVE:
+		duration = CONFIG_ACTIVE_SCAN_DURATION;
+		break;
+	default:
+		break;
+	}
 	return duration;
 }
 
@@ -686,18 +694,28 @@ static void prepare_devices(void)
 	}
 }
 
-static void wait_poll_period(uint32_t period_ms)
+static uint32_t wait_poll_period(uint32_t period_ms, bool passive_scan)
 {
 	static uint32_t last_poll = UINT32_MAX >> 1; /* -1 to force first poll */
 
-	uint32_t now = k_uptime_get_32();
+	const uint32_t now = k_uptime_get_32();
+	const uint32_t passed = now - last_poll;
+	uint32_t wait_duration = 0;
 
-	while ((now - last_poll) < period_ms) {
-		k_sleep(K_SECONDS(1));
-		now = k_uptime_get_32();
+	if (passed < period_ms) {
+		wait_duration = period_ms - passed;
+
+		/* passive scan during waiting period */
+		if (passive_scan == true) {
+			scan(BT_LE_SCAN_TYPE_PASSIVE, K_MSEC(wait_duration));
+		} else {
+			k_sleep(K_MSEC(wait_duration));
+		}
 	}
 
 	last_poll = now;
+
+	return wait_duration;
 }
 
 void thread(void *_a, void *_b, void *_c)
@@ -707,14 +725,32 @@ void thread(void *_a, void *_b, void *_c)
 	initialize();
 
 	for (;;) {
-		wait_poll_period(XIAOMI_POLL_PERIOD_MS);
-
 		const uint8_t scan_type = get_scan_type();
-		const k_timeout_t scan_duration =
-			get_scan_duration(scan_type);
-		scan_xiaomi_devices(scan_type, scan_duration);
+		uint32_t scan_duration = get_scan_duration(scan_type);
 
-		/* prepare devices */
+		/* We perform a passive scan during the whole waiting period
+		 * Variable contains the passive scan duration 
+		 * performed during waiting period */
+		const uint32_t actual_passive_scan_duration =
+			wait_poll_period(CONFIG_XIAOMI_POLL_INTERVAL * MSEC_PER_SEC,
+					 true) / MSEC_PER_SEC;
+
+		/* perform active scan if requested, 
+		 * or passive scan if wait_period was not long enough
+		 */
+		if ((scan_type == BT_LE_SCAN_TYPE_ACTIVE) ||
+		    (actual_passive_scan_duration < scan_duration)) {
+
+			/* only wait the remaining time + 1 second */
+			if (scan_type == BT_LE_SCAN_TYPE_PASSIVE) {
+				scan_duration -= actual_passive_scan_duration;
+				scan_duration++;
+			}
+
+			scan(scan_type, K_SECONDS(scan_duration));
+		}
+
+		/* prepare devices for polling */
 		prepare_devices();
 
 		/* initialize frame */
@@ -761,7 +797,5 @@ void thread(void *_a, void *_b, void *_c)
 			LOG_ERR("Failed to send frame (ret %d)", ret);
 			continue;
 		}
-
-		LOG_DBG("===============================================================");
 	}
 }

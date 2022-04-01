@@ -6,4 +6,30 @@ config XIAOMI_MAX_DEVICES
 	help
 		Maximum XIAOMI devices supported.
 
+config XIAOMI_POLL_INTERVAL
+	int "Poll interval (in seconds)"
+	default 180
+	help
+		Poll interval (in seconds)
+
+config ACTIVE_SCAN_DURATION
+	int "Active scan duration (in seconds)"
+	default 20
+	help
+		Active scan duration (in seconds)
+
+config PASSIVE_SCAN_MINUMUM_DURATION
+	int "Passive scan minimum required duration (in seconds)"
+	default 20
+	help
+		Passive scan minimum required duration (in seconds)
+
+config ACTIVE_SCAN_PERIODICITY
+	int "Active scan periodicity (ratio)"
+	default 5
+	help
+	What frequency the scan should be performed passivly or actively 
+	(0 : Passive scan, 1 : Always active scan, n : One active scan every n scans, others are passive)
+
+
 source "Kconfig.zephyr"
