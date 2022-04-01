@@ -106,7 +106,7 @@ You might need to change tasks environment variables to match your setup in `.vs
   - `pip install -r myworkspace/zephyr/scripts/requirements.txt`
 
 - Monitor console `screen /dev/ttyACM0 115200`
-- 
+
 ## Sources / links :
 
 - [lucasdietrich/AVRTOS : src/examples/zephyr-dev-usart-tool/main.c](https://github.com/lucasdietrich/AVRTOS/blob/drivers/src/examples/zephyr-dev-usart-tool/main.c)
