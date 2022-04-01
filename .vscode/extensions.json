@@ -3,7 +3,6 @@
     // for the documentation about the extensions.json format
     "recommendations": [
         "editorconfig.editorconfig",
-        "humao.rest-client",
         "ms-vscode.cpptools",
         "actboy168.tasks",
         "marus25.cortex-debug"
