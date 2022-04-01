@@ -10,7 +10,7 @@ You will need :
 - Xiaomi Mijia `LYWSD03MMC` devices with firmware version `1.0.0_0130`.
   - Firmware can be upgraded using "Xiaomi Home" app.
 - nrf52840 based board.
-- Zephyr RTOS toolchain.
+- Zephyr RTOS project + ARM toolchain.
 
 Workspace can be created and application can be imported using `west` commands : 
 - `west init -m https://github.com/lucasdietrich/zephyr-nrf52840-ble-dev --mr main myworkspace`
@@ -20,7 +20,7 @@ Workspace can be created and application can be imported using `west` commands :
 
 ## Measurements
 
-Measurements collected from Xiaomi devices are :
+Following measurements are periodically collected from Xiaomi devices are :
 
 | Symbol | Measurement   | Unit | Maximum resolution |
 | ------ | ------------- | ---- | ------------------ |
@@ -28,10 +28,7 @@ Measurements collected from Xiaomi devices are :
 | H      | Humidity      | %    | 1,00E+00           |
 | B      | Battery Level | V    | 1,00E-03           |
 
-Measurements are retrieved periodically from devices.
-
 ## IPC Protocol (UART)
-The IPC protocol is based on message of fixed length. IPC frame format is the following one :
 
 UART configuration is  
 
@@ -46,7 +43,7 @@ UART configuration is
 | RTS/CTS         | off                |
 | HW flow control | off                |
 
-Dataframe format is :
+The IPC protocol is based on messages of fixed length. IPC frame format is as follows :
 
 ![](./pics/ipc_frame_formats_white_bg.png)
 
@@ -86,7 +83,7 @@ Dataframe format is :
 
 ## VS Code
 
-This project is fully support by VS Code.
+This project is fully supported by VS Code IDE.
 
 You might need to change tasks environment variables to match your setup in `.vscode/tasks.json` file.
 ```json
@@ -100,7 +97,7 @@ You might need to change tasks environment variables to match your setup in `.vs
     },
 ```
 
-- You might to install `python` with required packages : 
+- You might need to install `python` with required packages : 
   - `python -m virtualenv myworkspace/venv`
   - `source myworkspace/venv/bin/activate`
   - `pip install -r myworkspace/zephyr/scripts/requirements.txt`
