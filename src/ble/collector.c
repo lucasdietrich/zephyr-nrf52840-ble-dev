@@ -201,6 +201,7 @@ xiaomi_context_t *get_context_from_conn(struct bt_conn *conn)
 	for (uint8_t i = 0; i < devices_count; i++) {
 		if (devices[i].conn == conn) {
 			dev = &devices[i];
+			break;
 		}
 	}
 
@@ -214,6 +215,7 @@ xiaomi_context_t *find_device_context(const bt_addr_le_t *addr)
 	for (uint8_t i = 0; i < devices_count; i++) {
 		if (bt_addr_le_cmp(&devices[i].addr, addr) == 0) {
 			dev = &devices[i];
+			break;
 		}
 	}
 
