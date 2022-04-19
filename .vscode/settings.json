@@ -67,6 +67,9 @@
         "algorithm": "c",
         "string": "c",
         "string_view": "c",
-        "ipc_frame.h": "c"
+        "ipc_frame.h": "c",
+        "conn.h": "c",
+        "uuid.h": "c",
+        "conn_internal.h": "c"
     }
 }

@@ -3,53 +3,30 @@
     "env" : {
         "zephyrDirectory": "../zephyr",
         "modulesDirectory":  "../modules",
-        "buildDirectory": "${workspaceFolder}/build",
+        "buildDirectory": "${workspaceFolder}/build"
     }, 
     "configurations": [
         {
             "name": "Demo",
             "includePath": [
                 "src",
-                "include",
-                "${buildDirectory}/zephyr/include/generated",
-                "${zephyrDirectory}/include",
-                "${zephyrDirectory}/lib/libc/newlib/include",
-                "${zephyrDirectory}/soc/arm/nordic_nrf/nrf52",
-                "${zephyrDirectory}/subsys/bluetooth",
-                "${modulesDirectory}/hal/cmsis/CMSIS/Core/Include",
-                "${modulesDirectory}/hal/nordic/nrfx",
-                "${modulesDirectory}/hal/nordic/nrfx/drivers/include",
+                "${buildDirectory}/zephyr/include/generated/**",
+                "${zephyrDirectory}/include/**",
+                "${zephyrDirectory}/lib/libc/newlib/include/**",
+                "${zephyrDirectory}/soc/arm/nordic_nrf/nrf52/**",
+                "${zephyrDirectory}/subsys/bluetooth/**",
+                "${modulesDirectory}/hal/cmsis/CMSIS/Core/Include/**",
+                "${modulesDirectory}/hal/nordic/nrfx/**",
+                "${modulesDirectory}/hal/nordic/nrfx/drivers/include/**",
                 "${modulesDirectory}/hal/nordic/nrfx/mdk",
-                "${zephyrDirectory}/modules/hal_nordic/nrfx",
-                "${modulesDirectory}/debug/segger/SEGGER",
-                "${modulesDirectory}/debug/segger/Config",
-                "${zephyrDirectory}/modules/segger",
-                "${modulesDirectory}/crypto/tinycrypt/lib/include",
-                "${zephyrDirectory}/include/posix",
-                "/usr/lib/arm-none-eabi/include"
+                "${zephyrDirectory}/modules/hal_nordic/nrfx/**",
+                "${modulesDirectory}/debug/segger/SEGGER/**",
+                "${modulesDirectory}/debug/segger/Config/**",
+                "${zephyrDirectory}/modules/segger/**",
+                "${modulesDirectory}/crypto/tinycrypt/lib/include/**",
+                "${zephyrDirectory}/include/posix/**",
+                "/usr/lib/arm-none-eabi/include/**"
             ],
-            "browse": {
-                "limitSymbolsToIncludedHeaders": true,
-                "path": [
-                    "src",
-                    "include",
-                    "${zephyrDirectory}/include",
-                    "${zephyrDirectory}/lib/libc/newlib/include/**",
-                    "${zephyrDirectory}/kernel/include",
-                    "${buildDirectory}/zephyr/include/generated",
-                    "${zephyrDirectory}/soc/arm/nordic_nrf/nrf52",
-                    "${zephyrDirectory}/subsys/bluetooth",
-                    "${modulesDirectory}/hal/cmsis/CMSIS/Core/Include",
-                    "${modulesDirectory}/hal/nordic/nrfx",
-                    "${modulesDirectory}/hal/nordic/nrfx/drivers/include",
-                    "${modulesDirectory}/hal/nordic/nrfx/mdk",
-                    "${zephyrDirectory}/modules/hal_nordic/nrfx",
-                    "${modulesDirectory}/debug/segger/SEGGER",
-                    "${modulesDirectory}/debug/segger/Config",
-                    "${zephyrDirectory}/modules/segger",
-                    "${modulesDirectory}/crypto/tinycrypt/lib/include"
-                ]
-            },
             "defines": [
                 "NRF52840_XXAA",
                 "__ZEPHYR__=1"
