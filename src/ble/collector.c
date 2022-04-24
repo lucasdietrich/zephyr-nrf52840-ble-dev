@@ -10,6 +10,9 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/addr.h>
 
+#include <bluetooth/hci.h>
+
+
 #include "../ipc_uart/ipc_frame.h"
 #include "../ipc_uart/ipc.h"
 
@@ -22,8 +25,9 @@ LOG_MODULE_REGISTER(ble, LOG_LEVEL_INF);
 /*___________________________________________________________________________*/
 
 void thread(void *_a, void *_b, void *_c);
+void thread2(void *_a, void *_b, void *_c);
 
-K_THREAD_DEFINE(ble_thread, 0x1000, thread, NULL, NULL, NULL, K_PRIO_COOP(8), 0, 0);
+K_THREAD_DEFINE(ble_thread, 0x1000, thread2, NULL, NULL, NULL, K_PRIO_COOP(8), 0, 0);
 
 /*___________________________________________________________________________*/
 
@@ -99,6 +103,21 @@ typedef struct {
 	 * @brief Time of the last attempt of measurements retrieval
 	 */
 	uint32_t last_measurement;
+
+	/**
+	 * @brief Last advertisement received
+	 */
+	struct {
+		/**
+		 * @brief RSSI
+		 */
+		uint8_t rssi;
+
+		/**
+		 * @brief Timestamp
+		 */
+		uint32_t timestamp;
+	} adv;
 
 	/**
 	 * @brief Number of times connection to the device failed. 
@@ -246,7 +265,7 @@ static void reset_device_context(xiaomi_context_t *ctx)
 	prepare_device_session(ctx);
 }
 
-static void register_device(const bt_addr_le_t *addr)
+static void register_device(const bt_addr_le_t *addr, uint8_t rssi)
 {
 	xiaomi_context_t *device = find_device_context(addr);
 
@@ -263,9 +282,30 @@ static void register_device(const bt_addr_le_t *addr)
 		bt_addr_le_copy(&device->addr, addr);
 
 		reset_device_context(device);
+
+		device->adv.rssi = rssi;
+		device->adv.timestamp = get_uptime_sec();
 	}
 
 	device->flags.enabled = 1U;
+}
+
+/*___________________________________________________________________________*/
+
+int notify_rssi(bt_addr_le_t *addr, uint8_t rssi)
+{
+	int ret;
+
+	ipc_frame_t *frame = NULL;
+	
+	ret = ipc_allocate_frame(&frame);
+	if(ret == 0) {
+		// frame->data.
+
+		ret = ipc_send_frame(frame);
+	}
+
+	return 0;
 }
 
 /*___________________________________________________________________________*/
@@ -403,6 +443,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bool disconnect = true;
 
 	xiaomi_context_t *ctx = get_context_from_conn(conn);
+
 	if (err != 0) {
 		LOG_ERR("(%x) Failed to connect to %s (%u)",
 			(uint32_t)conn, log_strdup(addr), err);
@@ -477,8 +518,10 @@ static void device_found(const bt_addr_le_t *addr,
 	}
 
 	if (is_xiaomi == true) {
-		register_device(addr);
+		register_device(addr, rssi);
 	}
+
+	notifiy_rssi(addr, rssi);
 }
 
 
@@ -799,5 +842,23 @@ void thread(void *_a, void *_b, void *_c)
 			LOG_ERR("Failed to send frame (ret %d)", ret);
 			continue;
 		}
+	}
+}
+
+void thread2(void *_a, void *_b, void *_c)
+{
+	initialize();
+
+	ipc_data_t data = {
+		.buf[0] = 0,
+		.size = 1
+	};
+
+	for (;;) {
+		data.buf[0]++;
+
+		ipc_send_data(&data);
+
+		k_sleep(K_SECONDS(5));
 	}
 }

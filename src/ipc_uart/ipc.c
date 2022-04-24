@@ -12,10 +12,10 @@
 #include "../utils/crc32_ieee.h"
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(ipc, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(ipc, LOG_LEVEL_DBG);
 
 // config
-#define IPC_UART_TX_TIMEOUT_MS 50U
+#define IPC_UART_TX_TIMEOUT_MS 1U
 #define CONFIG_IPC_MEMSLAB_COUNT 2
 
 // drivers
@@ -150,7 +150,7 @@ static void ipc_log_frame(const ipc_frame_t *frame)
 	LOG_INF("IPC TX frame: %u B, seq = %x, data size = %u, sfd = %x, efd = %x crc32=%x",
 		IPC_FRAME_SIZE, frame->seq, frame->data.size, frame->start_delimiter,
 		frame->end_delimiter, frame->crc32);
-	LOG_HEXDUMP_DBG(frame->data.buf, frame->data.size, "IPC frame data");
+	LOG_HEXDUMP_DBG(frame, sizeof(*frame), "IPC frame data");
 }
 
 void tx_thread(void *_a, void *_b, void *_c)
@@ -179,6 +179,7 @@ void tx_thread(void *_a, void *_b, void *_c)
 		}
 
 		/* send frame */
+		/* TODO, we need to ensure that the frame are spaced in time by at least 1ms */
 		ret = uart_tx(uart_dev, (const uint8_t *)frame,
 			      IPC_FRAME_SIZE, IPC_UART_TX_TIMEOUT_MS);
 		if (ret != 0) {

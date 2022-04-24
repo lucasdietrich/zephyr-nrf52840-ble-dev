@@ -60,4 +60,6 @@ typedef struct {
 	xiaomi_record_t records[15];
 } xiaomi_dataframe_t;
 
+_Static_assert(sizeof(xiaomi_dataframe_t) < 256, "xiaomi_dataframe_t is too large");
+
 #endif /* _BLE_XIAOMI_RECORD_H_ */
