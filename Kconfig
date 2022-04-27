@@ -1,0 +1,5 @@
+mainmenu "ipc_uart"
+
+rsource "src/uart_ipc/Kconfig"
+
+source "Kconfig.zephyr"

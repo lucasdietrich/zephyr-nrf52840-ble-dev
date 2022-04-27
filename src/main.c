@@ -2,24 +2,20 @@
 
 #include <string.h>
 
-#include "ipc_uart/ipc.h"
+#include "uart_ipc/ipc.h"
 
-// #include <uart_ipc/ipc.h>
 
-#define MESSAGE "IPC"
+K_MSGQ_DEFINE(msgq, sizeof(ipc_frame_t), 4U, 4U);
 
 int main(void)
 {
-	// ipc_data_t data;
+	ipc_frame_t frame;
 
-	// memcpy(data.buf, MESSAGE, sizeof(MESSAGE));
-	// data.size = sizeof(MESSAGE);
-
-	// k_sleep(K_SECONDS(2));
+	ipc_attach_rx_msgq(&msgq);
 
 	for (;;) {
-		// ipc_send_data(&data);
-
-		k_sleep(K_SECONDS(10));
+		if (k_msgq_get(&msgq, &frame, K_FOREVER) == 0) {
+			ipc_send_data(&frame.data);
+		}
 	}
 }
