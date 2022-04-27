@@ -1,5 +1,8 @@
 mainmenu "xiaomi"
 
+
+rsource "./src/uart_ipc/Kconfig"
+
 config XIAOMI_MAX_DEVICES
 	int "Maximum XIAOMI devices supported"
 	default 15

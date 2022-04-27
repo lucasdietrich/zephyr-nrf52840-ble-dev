@@ -10,8 +10,8 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/addr.h>
 
-#include "../ipc_uart/ipc_frame.h"
-#include "../ipc_uart/ipc.h"
+#include "../uart_ipc/ipc_frame.h"
+#include "../uart_ipc/ipc.h"
 
 #include "xiaomi_record.h"
 
