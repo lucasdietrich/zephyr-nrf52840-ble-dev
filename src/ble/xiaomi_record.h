@@ -57,7 +57,7 @@ typedef struct {
 	/**
 	 * @brief List of records
 	 */
-	xiaomi_record_t records[15];
+	xiaomi_record_t records[1];
 } xiaomi_dataframe_t;
 
 #endif /* _BLE_XIAOMI_RECORD_H_ */

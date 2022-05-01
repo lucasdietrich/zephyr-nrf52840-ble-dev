@@ -727,34 +727,6 @@ void thread(void *_a, void *_b, void *_c)
 	initialize();
 
 	for (;;) {
-		const uint8_t scan_type = get_scan_type();
-		uint32_t scan_duration = get_scan_duration(scan_type);
-
-		/* We perform a passive scan during the whole waiting period
-		 * Variable contains the passive scan duration 
-		 * performed during waiting period */
-		const uint32_t actual_passive_scan_duration =
-			wait_poll_period(CONFIG_XIAOMI_POLL_INTERVAL * MSEC_PER_SEC,
-					 true) / MSEC_PER_SEC;
-
-		/* perform active scan if requested, 
-		 * or passive scan if wait_period was not long enough
-		 */
-		if ((scan_type == BT_LE_SCAN_TYPE_ACTIVE) ||
-		    (actual_passive_scan_duration < scan_duration)) {
-
-			/* only wait the remaining time + 1 second */
-			if (scan_type == BT_LE_SCAN_TYPE_PASSIVE) {
-				scan_duration -= actual_passive_scan_duration;
-				scan_duration++;
-			}
-
-			scan(scan_type, K_SECONDS(scan_duration));
-		}
-
-		/* prepare devices for polling */
-		prepare_devices();
-
 		/* initialize frame */
 		ret = ipc_allocate_frame(&frame);
 		if (ret != 0) {
@@ -762,36 +734,8 @@ void thread(void *_a, void *_b, void *_c)
 			continue;
 		}
 
-		xiaomi_dataframe_t *dataframe = (xiaomi_dataframe_t *)frame->data.buf;
-		clear_data_frame(dataframe);
-
-		/* poll all devices to retrieve measurements */
-		for (uint32_t i = 0; i <
-		     MIN(devices_count, ARRAY_SIZE(dataframe->records));
-		     i++) {
-			bool success = retrieve_measurements(
-				&devices[i],
-				&dataframe->records[dataframe->count].measurements);
-			if (success == true) {
-				/* copy addr into record */
-				bt_addr_le_copy(
-					&dataframe->records[dataframe->count].addr,
-					&devices[i].addr);
-				
-				/* copy measurement time */
-				dataframe->records[dataframe->count].time =
-					devices[i].last_measurement;
-
-				dataframe->count++;
-			}
-		}
-
-		/* finalize frame */
-		dataframe->time = get_uptime_sec();
-		frame->data.size = sizeof(xiaomi_dataframe_t);
-
-		LOG_DBG("count = %u, frame_time = %u", 
-			dataframe->count, dataframe->time);
+		frame->data.size = IPC_MAX_DATA_SIZE;
+		memset(frame->data.buf, 0x00, IPC_MAX_DATA_SIZE);
 
 		/* send frame */
 		ret = ipc_send_frame(frame);
@@ -799,5 +743,7 @@ void thread(void *_a, void *_b, void *_c)
 			LOG_ERR("Failed to send frame (ret %d)", ret);
 			continue;
 		}
+
+		k_sleep(K_SECONDS(2));
 	}
 }
