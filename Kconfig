@@ -5,15 +5,9 @@ rsource "./src/uart_ipc/Kconfig"
 
 config XIAOMI_MAX_DEVICES
 	int "Maximum XIAOMI devices supported"
-	default 15
+	default 13
 	help
 		Maximum XIAOMI devices supported.
-
-config XIAOMI_POLL_INTERVAL
-	int "Poll interval (in seconds)"
-	default 180
-	help
-		Poll interval (in seconds)
 
 config ACTIVE_SCAN_DURATION
 	int "Active scan duration (in seconds)"
@@ -21,18 +15,16 @@ config ACTIVE_SCAN_DURATION
 	help
 		Active scan duration (in seconds)
 
-config PASSIVE_SCAN_MINUMUM_DURATION
+config PASSIVE_SCAN_DURATION
 	int "Passive scan minimum required duration (in seconds)"
 	default 20
 	help
 		Passive scan minimum required duration (in seconds)
 
-config ACTIVE_SCAN_PERIODICITY
-	int "Active scan periodicity (ratio)"
-	default 5
+config DATAFRAME_MIN_INTERVAL
+	int "Dataframe sent minimum interval (in seconds)"
+	default 15
 	help
-	What frequency the scan should be performed passivly or actively 
-	(0 : Passive scan, 1 : Always active scan, n : One active scan every n scans, others are passive)
-
+		"Dataframe sent minimum interval (in seconds)"
 
 source "Kconfig.zephyr"
