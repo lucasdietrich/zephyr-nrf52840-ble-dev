@@ -1,0 +1,29 @@
+/ {
+    aliases {
+        ipc-uart = &uart1;
+    };
+};
+
+/* debug uart: default config */
+&uart0 {
+    status = "okay";
+    current-speed = < 115200 >;
+    tx-pin = < 0x23 >;
+    rx-pin = < 0x24 >;
+    rx-pull-up;
+    rts-pin = < 0x5 >;
+    cts-pin = < 0x7 >;
+    cts-pull-up;
+};
+
+// https://docs.zephyrproject.org/3.0.0/reference/devicetree/bindings/serial/nordic%2Cnrf-uart.html
+// https://docs.zephyrproject.org/3.0.0/reference/devicetree/bindings/serial/nordic%2Cnrf-uarte.html
+/* ipc uart */
+&uart1 {
+    status = "okay";
+    current-speed = < 9600 >; // set to 1000000 (0xf4240) or 115200 (0x1c200)
+    rx-pin = < 0x21 >; // p1.01
+    rx-pull-up;
+    tx-pin = < 0x22 >; // p1.02
+    parity = "none";
+};

@@ -12,13 +12,31 @@
     },
     "tasks": [
         {
-            "label": "Build",
+            "label": "Build DK",
             "detail": "Build",
             "type": "shell",
             "command": "${westPath} build",
             "args": [
 
             ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated"
+            },
+            "options": {
+                "statusbar": {
+                    "hide": false
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Module",
+            "detail": "Build",
+            "type": "shell",
+            "command": "${westPath} build -- -DDTC_OVERLAY_FILE=./overlays/acn52840_52840.overlay",
+            "args": [],
             "group": "build",
             "presentation": {
                 "reveal": "always",
