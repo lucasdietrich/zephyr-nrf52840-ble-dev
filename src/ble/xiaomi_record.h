@@ -17,9 +17,9 @@ typedef struct {
 	int16_t temperature;
 
 	/**
-	 * @brief Device measured humidity, base unit : 1 %
+	 * @brief Device measured humidity, base unit : 1e-2 %
 	 */
-	uint16_t humidity; /* 1 % */
+	uint16_t humidity; /* 1e-2 % */
 
 	/**
 	 * @brief Device measured battery voltage, base unit: 1 mV
