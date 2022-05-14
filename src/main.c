@@ -90,6 +90,18 @@ void main(void)
 
 	period = max_period;
 	while (1) {
+		pwm_pin_set_usec(pwm, PWM0_CHANNEL, 0U, 0U, PWM0_FLAGS);
+		if (ret) {
+			printk("Error %d: failed to set pulse width\n", ret);
+			return;
+		}
+
+		pwm_pin_set_usec(pwm, PWM1_CHANNEL, 0U, 0U, PWM1_FLAGS);
+		if (ret) {
+			printk("Error %d: failed to set pulse width\n", ret);
+			return;
+		}
+
 		ret = pwm_pin_set_usec(pwm, PWM0_CHANNEL,
 				       period, period / 2U, PWM0_FLAGS);
 		if (ret) {
