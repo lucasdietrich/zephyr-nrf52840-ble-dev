@@ -11,6 +11,8 @@
 #include <bluetooth/addr.h>
 #include <bluetooth/gap.h>
 
+#include "../io/io.h"
+
 #include "../utils/utils.h"
 
 #include <logging/log.h>
@@ -262,6 +264,8 @@ static void device_found(const bt_addr_le_t *addr,
 		}
 
 		k_mutex_unlock(&devices_mutex);
+
+		io_led_sig(IO_LED_BLE, 100U, rssi_to_brightness(rssi));
 	}
 }
 
