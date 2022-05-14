@@ -22,7 +22,7 @@
             "group": "build",
             "presentation": {
                 "reveal": "always",
-                "panel": "dedicated"
+                "panel": "shared"
             },
             "options": {
                 "statusbar": {
@@ -40,7 +40,7 @@
             "group": "build",
             "presentation": {
                 "reveal": "always",
-                "panel": "dedicated"
+                "panel": "shared"
             },
             "options": {
                 "statusbar": {
@@ -65,7 +65,7 @@
             "group": "build",
             "presentation": {
                 "reveal": "silent",
-                "panel": "dedicated"
+                "panel": "shared"
             },
             "options": {
                 "statusbar": {

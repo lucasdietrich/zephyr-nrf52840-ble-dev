@@ -37,7 +37,7 @@
 			pwms = < &pwm0 0xd >;
 		};
         pwm_led1: pwm_led_1 {
-            pwms = <&pwm1 0xe>;
+            pwms = <&pwm0 0xe>;
         };
         pwm_led2: pwm_led_2 {
             pwms = <&pwm2 0xf>;

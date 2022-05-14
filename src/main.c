@@ -14,12 +14,24 @@
 #include <device.h>
 #include <drivers/pwm.h>
 
-#define PWM_LED0_NODE	DT_ALIAS(pwm_led3)
+#define PWM_LED0_NODE	DT_ALIAS(pwm_led0)
+#define PWM_LED1_NODE	DT_ALIAS(pwm_led1)
 
 #if DT_NODE_HAS_STATUS(PWM_LED0_NODE, okay)
-#define PWM_CTLR	DT_PWMS_CTLR(PWM_LED0_NODE)
-#define PWM_CHANNEL	DT_PWMS_CHANNEL(PWM_LED0_NODE)
-#define PWM_FLAGS	DT_PWMS_FLAGS(PWM_LED0_NODE)
+#define PWM0_CTLR	DT_PWMS_CTLR(PWM_LED0_NODE)
+#define PWM0_CHANNEL	DT_PWMS_CHANNEL(PWM_LED0_NODE)
+#define PWM0_FLAGS	DT_PWMS_FLAGS(PWM_LED0_NODE)
+#else
+#error "Unsupported board: pwm-led0 devicetree alias is not defined"
+#define PWM_CTLR	DT_INVALID_NODE
+#define PWM_CHANNEL	0
+#define PWM_FLAGS	0
+#endif
+
+#if DT_NODE_HAS_STATUS(PWM_LED1_NODE, okay)
+#define PWM1_CTLR	DT_PWMS_CTLR(PWM_LED1_NODE)
+#define PWM1_CHANNEL	DT_PWMS_CHANNEL(PWM_LED1_NODE)
+#define PWM1_FLAGS	DT_PWMS_FLAGS(PWM_LED1_NODE)
 #else
 #error "Unsupported board: pwm-led0 devicetree alias is not defined"
 #define PWM_CTLR	DT_INVALID_NODE
@@ -40,7 +52,14 @@ void main(void)
 
 	printk("PWM-based blinky\n");
 
-	pwm = DEVICE_DT_GET(PWM_CTLR);
+	printk("0: ctrl: %p chan: %u flags: %u\n", DEVICE_DT_GET(PWM0_CTLR), PWM0_CHANNEL, PWM0_FLAGS);
+	printk("1: ctrl: %p chan: %u flags: %u\n", DEVICE_DT_GET(PWM1_CTLR), PWM1_CHANNEL, PWM1_FLAGS);
+
+	if (DEVICE_DT_GET(PWM0_CTLR) == DEVICE_DT_GET(PWM1_CTLR)) {
+		printk("pwm_led0 and pwm_led1 use the same PWM controller\n");
+	}
+
+	pwm = DEVICE_DT_GET(PWM0_CTLR);
 	if (!device_is_ready(pwm)) {
 		printk("Error: PWM device %s is not ready\n", pwm->name);
 		return;
@@ -53,10 +72,10 @@ void main(void)
 	 * Keep its value at least MIN_PERIOD_USEC * 4 to make sure
 	 * the sample changes frequency at least once.
 	 */
-	printk("Calibrating for channel %d...\n", PWM_CHANNEL);
+	printk("Calibrating for channel %d...\n", PWM1_CHANNEL);
 	max_period = MAX_PERIOD_USEC;
-	while (pwm_pin_set_usec(pwm, PWM_CHANNEL,
-				max_period, max_period / 2U, PWM_FLAGS)) {
+	while (pwm_pin_set_usec(pwm, PWM1_CHANNEL,
+				max_period, max_period / 2U, PWM1_FLAGS)) {
 		max_period /= 2U;
 		if (max_period < (4U * MIN_PERIOD_USEC)) {
 			printk("Error: PWM device "
@@ -71,8 +90,15 @@ void main(void)
 
 	period = max_period;
 	while (1) {
-		ret = pwm_pin_set_usec(pwm, PWM_CHANNEL,
-				       period, period / 2U, PWM_FLAGS);
+		ret = pwm_pin_set_usec(pwm, PWM0_CHANNEL,
+				       period, period / 2U, PWM0_FLAGS);
+		if (ret) {
+			printk("Error %d: failed to set pulse width\n", ret);
+			return;
+		}
+
+		ret = pwm_pin_set_usec(pwm, PWM1_CHANNEL,
+				       period, period / 2U, PWM1_FLAGS);
 		if (ret) {
 			printk("Error %d: failed to set pulse width\n", ret);
 			return;
