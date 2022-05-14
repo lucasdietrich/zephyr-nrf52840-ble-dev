@@ -1,6 +1,17 @@
 / {
     aliases {
         ipc-uart = &uart1;
+
+        user-button = &button0;
+
+        ble-led = &pwm_led0;
+        ipc-rx-led = &pwm_led1;
+        ipc-tx-led = &pwm_led2;
+
+        counter = &timer3; // rtc2
+
+        /* if prefer rtc2 */
+        counter-alt = &rtc2;
     };
 };
 
@@ -26,4 +37,61 @@
     rx-pull-up;
     tx-pin = < 0x22 >; // p1.02
     parity = "none";
+};
+
+/ {
+    pwmleds {
+        pwm_led0: pwm_led_0 {
+			pwms = < &pwm0 0xd >;
+		};
+        pwm_led1: pwm_led_1 {
+            pwms = <&pwm0 0xe>;
+        };
+        pwm_led2: pwm_led_2 {
+            pwms = <&pwm0 0xf>;
+        };
+        pwm_led3: pwm_led_3 {
+            pwms = <&pwm3 0x10>;
+        };
+    };
+};
+
+&pwm0
+{
+    status = "okay";
+    ch0-pin = < 0xd >;
+    ch0-inverted;
+
+    ch1-pin = < 0xe >;
+    ch1-inverted;
+
+    ch2-pin = < 0xf >;
+    ch2-inverted;
+};
+
+&pwm1
+{
+    status = "disabled";
+    ch0-pin = < 0xe >;
+    ch0-inverted;
+};
+
+&pwm2
+{
+    status = "disabled";
+    ch0-pin = < 0xf >;
+    ch0-inverted;
+};
+
+&pwm3
+{
+    status = "okay";
+    ch0-pin = < 0x10 >;
+    ch0-inverted;
+};
+
+&button0 {
+    status = "okay";
+    gpios = < &gpio0 0xb 0x11 >;
+    label = "Main user button";
 };

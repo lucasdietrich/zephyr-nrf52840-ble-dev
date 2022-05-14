@@ -2,6 +2,7 @@ mainmenu "xiaomi"
 
 
 rsource "./src/uart_ipc/Kconfig"
+rsource "./src/io/Kconfig"
 
 config XIAOMI_MAX_DEVICES
 	int "Maximum XIAOMI devices supported"

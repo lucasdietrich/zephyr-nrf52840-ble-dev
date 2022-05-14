@@ -1,4 +1,16 @@
+/*
+ * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file Sample app to demonstrate PWM.
+ */
+
 #include <zephyr.h>
+#include "io/io.h"
 
 #include "uart_ipc/ipc_frame.h"
 #include "uart_ipc/ipc.h"

@@ -1,0 +1,9 @@
+# Config for counter alarm sample
+
+config COUNTER_RTC2
+	bool
+	default y if SOC_FAMILY_NRF
+
+config COUNTER_TIMER3
+	bool
+	default y if SOC_FAMILY_NRF
