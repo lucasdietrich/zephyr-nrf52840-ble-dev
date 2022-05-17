@@ -117,7 +117,7 @@ void ipc_event_cb(ipc_event_t ev, void *user_data)
 			io_led_sig(IO_LED_IPC_RX, 100U, 100U);
 			break;
 		case IPC_LL_FRAME_SENT:
-			io_led_sig(IO_LED_IPC_TX, 100U, 0U);
+			io_led_sig(IO_LED_IPC_TX, 100U, 100U);
 			break;
 		default:
 			break;
