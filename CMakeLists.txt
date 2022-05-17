@@ -13,5 +13,4 @@ endif()
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(nrf52840-ble-getting-started)
 
-FILE(GLOB_RECURSE app_sources src/*.c*)
-target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE src/main.c)
