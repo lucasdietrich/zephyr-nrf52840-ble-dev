@@ -122,7 +122,7 @@ static struct counter_alarm_cfg alarms_cfg[3U] = {
 	ALARM_CFG_INITIALIZE(led_alarm_cb, &alarms_cfg[2U]),
 };
 
-static int get_led_chan_flags(io_led_t led, pwm_flags_t *flags, uint32_t *channel)
+static int get_led_chan_infos(io_led_t led, pwm_flags_t *flags, uint32_t *channel)
 {
 	int ret = 0;
 
@@ -161,7 +161,7 @@ static void led_alarm_cb(const struct device *dev,
 	pwm_flags_t flags;
 	uint32_t channel;
 
-	if (get_led_chan_flags(led, &flags, &channel) == 0U) {
+	if (get_led_chan_infos(led, &flags, &channel) == 0U) {
 		pwm_pin_set_usec(pwm, channel, PWM_PERIOD_US, 0U, flags);
 	}
 }
@@ -230,7 +230,7 @@ int io_led_sig(io_led_t led, uint32_t duration_ms, uint8_t brightness)
 	uint32_t channel;
 	uint32_t pulse = 0U;
 
-	ret = get_led_chan_flags(led, &flags, &channel);
+	ret = get_led_chan_infos(led, &flags, &channel);
 	if (ret != 0) {
 		ret = -EINVAL;
 		goto exit;
@@ -253,7 +253,6 @@ int io_led_sig(io_led_t led, uint32_t duration_ms, uint8_t brightness)
 		alarm_cfg->ticks = counter_us_to_ticks(counter, duration_ms * 1000U);
 		ret = counter_set_channel_alarm(counter, (uint8_t)led, alarm_cfg);
 		if (ret) {
-			ret = counter_set_channel_alarm(counter, (uint8_t)led, alarm_cfg);
 			LOG_ERR("counter_set_channel_alarm failed: %d", ret);
 			goto exit;
 		}
