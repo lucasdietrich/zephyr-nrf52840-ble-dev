@@ -32,7 +32,7 @@
 /* ipc uart */
 &uart1 {
     status = "okay";
-    current-speed = < 1000000 >; // set to 1000000 (0xf4240) or 115200 (0x1c200)
+    current-speed = < 115200 >; // set to 1000000 (0xf4240) or 115200 (0x1c200)
     rx-pin = < 0x21 >; // p1.01
     rx-pull-up;
     tx-pin = < 0x22 >; // p1.02

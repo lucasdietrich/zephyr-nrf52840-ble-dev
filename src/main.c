@@ -110,11 +110,27 @@ exit:
 	return ret;
 }
 
+void ipc_event_cb(ipc_event_t ev, void *user_data)
+{
+	switch(ev) {
+		case IPC_LL_FRAME_RECEIVED:
+			io_led_sig(IO_LED_IPC_RX, 100U, 100U);
+			break;
+		case IPC_LL_FRAME_SENT:
+			io_led_sig(IO_LED_IPC_TX, 100U, 0U);
+			break;
+		default:
+			break;
+	};
+}
+
 int main(void)
 {
 	io_init();
 	
 	uint32_t last_time = (uint32_t)-1;
+
+	ipc_register_event_callback(ipc_event_cb, NULL);
 
 	for (;;) {
 		if (k_sem_take(&ipc_sem, K_FOREVER) == 0) {

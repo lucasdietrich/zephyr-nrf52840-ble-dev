@@ -16,7 +16,7 @@
 #include "../utils/utils.h"
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(ble, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(ble, LOG_LEVEL_WRN);
 
 /*___________________________________________________________________________*/
 
