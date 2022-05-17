@@ -67,7 +67,10 @@
         "algorithm": "c",
         "string": "c",
         "string_view": "c",
-        "ipc_frame.h": "c"
+        "ipc_frame.h": "c",
+        "nrfx_gpiote.h": "c",
+        "nrf.h": "c",
+        "nrf_gpio.h": "c"
     },
     "cortex-debug.variableUseNaturalFormat": false
 }
