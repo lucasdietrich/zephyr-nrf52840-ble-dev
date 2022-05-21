@@ -45,7 +45,7 @@ UART configuration is for board `nrf52840dk_nrf52840` :
 | RTS/CTS         | off     |
 | HW flow control | off     |
 
-And for `acn52840_52840.overlay`
+And for `custom_acn52840` board :
 
 | Option          | Value |
 | --------------- | ----- |
@@ -99,6 +99,10 @@ The IPC protocol is based on messages of fixed length. IPC frame format is as fo
 [00:00:12.119,964] <dbg> app.send_data_frame: count = 8, frame_time = 12
 ```
 
+## Custom board `custom_acn52840`
+
+Check if board is found using : `west boards --board-root . | grep acn52840`
+
 ## VS Code
 
 This project is fully supported by VS Code IDE.
@@ -128,3 +132,4 @@ You might need to change tasks environment variables to match your setup in `.vs
 - [./build/zephyr/zephyr.dts](./build/zephyr/zephyr.dts)
 - [./build/zephyr/include/generated/autoconf.h](./build/zephyr/include/generated/autoconf.h)
 - [**Xiaomi Mijia LYWSD03MMC : Récupérer les données du capteur sur un Raspberry Pi avec gatttool**](https://www.fanjoe.be/?p=3911)
+- [Board Porting Guide](https://docs.zephyrproject.org/latest/hardware/porting/board_porting.html)

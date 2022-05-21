@@ -35,7 +35,7 @@
             "label": "Build Module",
             "detail": "Build",
             "type": "shell",
-            "command": "${westPath} build -- -DDTC_OVERLAY_FILE=./overlays/acn52840_52840.overlay",
+            "command": "${westPath} build -- -DDTC_OVERLAY_FILE=./overlays/custom_acn52840.overlay",
             "args": [],
             "group": "build",
             "presentation": {
