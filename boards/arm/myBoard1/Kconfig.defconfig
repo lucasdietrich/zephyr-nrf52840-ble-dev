@@ -1,0 +1,7 @@
+if MY_BOARD_1
+
+config SPI_STM32_INTERRUPT
+    default y
+    depends on SPI
+
+endif

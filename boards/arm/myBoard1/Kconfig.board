@@ -1,0 +1,3 @@
+config MY_BOARD_1
+    bool "My Board"
+    depends on SOC_STM32L432XX
