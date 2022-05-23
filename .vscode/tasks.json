@@ -15,7 +15,7 @@
             "label": "Build DK",
             "detail": "Build",
             "type": "shell",
-            "command": "${westPath} build",
+            "command": "${westPath} build -b nrf52840dk_nrf52840",
             "args": [
 
             ],
@@ -35,7 +35,7 @@
             "label": "Build Module",
             "detail": "Build",
             "type": "shell",
-            "command": "${westPath} build -- -DDTC_OVERLAY_FILE=./overlays/custom_acn52840.overlay",
+            "command": "${westPath} build -b custom_acn52840",
             "args": [],
             "group": "build",
             "presentation": {

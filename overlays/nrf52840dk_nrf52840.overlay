@@ -2,11 +2,11 @@
     aliases {
         ipc-uart = &uart1;
 
-        user-button = &button0;
-
+        
         ble-led = &pwm_led0;
         ipc-rx-led = &pwm_led1;
         ipc-tx-led = &pwm_led2;
+        user-button = &button0;
 
         counter = &timer3; // rtc2
 

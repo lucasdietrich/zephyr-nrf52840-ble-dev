@@ -1,13 +1,17 @@
 cmake_minimum_required(VERSION 3.13.1)
 
+set(BOARD_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/.)
+
 if(NOT DEFINED BOARD)
     set(BOARD "nrf52840dk_nrf52840")
 endif()
 
-# CONF_FILE
-
 if(NOT DEFINED DTC_OVERLAY_FILE)
-    set(DTC_OVERLAY_FILE "overlays/nrf52840dk_nrf52840.overlay")
+    if("${BOARD}" STREQUAL "nrf52840dk_nrf52840")
+        set(DTC_OVERLAY_FILE "overlays/nrf52840dk_nrf52840.overlay")
+    elseif("${BOARD}" STREQUAL "custom_acn52840")
+        set(DTC_OVERLAY_FILE "overlays/custom_acn52840.overlay")
+    endif()
 endif()
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)

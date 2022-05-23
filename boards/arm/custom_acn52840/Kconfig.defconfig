@@ -6,4 +6,4 @@ config BOARD
 config BT_CTLR
 	default BT
 
-endif # BOARD_CUSTOM_ACN52840
+endif #BOARD_CUSTOM_ACN52840
