@@ -18,31 +18,31 @@
 
 	leds {
 		compatible = "gpio-leds";
-		led0: led_ble {
+		led0: led_tx {
 			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
-			label = "LED BLE";
+			label = "LED TX";
 		};
 		led1: led_rx {
 			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			label = "LED RX";
 		};
-		led2: led_tx {
+		led2: led_ble {
 			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
-			label = "LED TX";
+			label = "LED BLE";
 		};
 	};
 
     pwmleds {
 		compatible = "pwm-leds";
 		
-        pwm_led0: pwm_led_ble {
+        pwm_led0: pwm_led_tx {
 			pwms = < &pwm0 12 >;
 		};
         pwm_led1: pwm_led_rx {
             pwms = <&pwm0 13>;
         };
-        pwm_led2: pwm_led_tx {
-            pwms = <&pwm0 14>;
+        pwm_led2: pwm_led_ble {
+            pwms = <&pwm0 15>;
         };
     };
 
@@ -57,9 +57,9 @@
     aliases {
         ipc-uart = &uart1;
 
-        ble-led = &pwm_led0;
+        ble-led = &pwm_led2;
         ipc-rx-led = &pwm_led1;
-        ipc-tx-led = &pwm_led2;
+        ipc-tx-led = &pwm_led0;
         user-button = &button0;
 
         counter = &timer3;
@@ -103,7 +103,7 @@
     ch1-pin = < 13 >;
     ch1-inverted;
 
-    ch2-pin = < 14 >;
+    ch2-pin = < 15 >;
     ch2-inverted;
 };
 

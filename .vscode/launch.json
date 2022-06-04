@@ -10,26 +10,14 @@
             "type": "cortex-debug",
             "request": "launch",
             "executable": "${workspaceFolder}/build/zephyr/zephyr.elf",
-            "args": [],
-            "stopAtEntry": true,
             "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": true,
             "interface": "swd",
             "servertype": "jlink",
             "device": "nrf52",
             "serverpath": "/opt/SEGGER/JLink/JLinkGDBServerCLExe",
-            "serialNumber": "683339521",
-            "miDebuggerServerAddress": "localhost:2331",
+            // "serialNumber": "683339521",
             // "preLaunchTask": "Flash",
             "runToEntryPoint": "main",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                }
-            ]
         }
     ]
 }
