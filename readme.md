@@ -62,6 +62,21 @@ The IPC protocol is based on messages of fixed length. IPC frame format is as fo
 
 ![](./pics/ipc_frame_formats_white_bg.png)
 
+## LEDS
+
+| LED     | nrf52840dk\_nrf52840 | custom\_acm52840 |
+| ------- | -------------------- | ---------------- |
+| BLE     | GREEN1               | RED              |
+| TX      | GREEN2               | GREEN            |
+| RX      | GREEN3               | ORANGE           |
+
+## LOGS
+
+- `nrf52840dk_nrf52840`: logging via UART0
+- `custom_acn52840` : logging using SEGGER RTT
+  - Run RTT Client `JLinkRTTClient`
+  - Run debugger `JLinkGDBServerCLExe -device nrf52840_xxaa -if SWD`
+
 ## Zephyr application-specific configuration options
 
 | Configuration option              | Description                                 | Unit    | Default Value |

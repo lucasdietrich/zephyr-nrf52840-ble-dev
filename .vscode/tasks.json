@@ -7,7 +7,7 @@
             "venvPath": "../.venv",
             "westPath": "../.venv/bin/west",
             "netToolsPath": "../tools/net-tools",
-            "serialNumber": "683339521"
+            "serialNumber": "683339521", /* 683339521, 50106017 */
         }
     },
     "tasks": [
