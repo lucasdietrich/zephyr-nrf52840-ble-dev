@@ -86,7 +86,9 @@
 &uart1 {
 	compatible = "nordic,nrf-uarte";
     status = "okay";
-    current-speed = < 9600 >;
+
+	/* 1200, 2400, 4800, 9600, 14400, 19200, 28800, 31250, 38400, 56000, 57600, 76800, 115200, 230400, 250000, 460800, 921600, 1000000 */
+    current-speed = < 19200 >;
     rx-pin = < 27 >;
     rx-pull-up;
     tx-pin = < 26 >;

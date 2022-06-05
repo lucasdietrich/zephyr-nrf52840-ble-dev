@@ -47,7 +47,7 @@ static void df_build_dev_iterate_cb(xiaomi_context_t *dev, void *user_data)
 		       sizeof(xiaomi_measurements_t));
 	}
 
-	LOG_DBG("%s (%s) rssi: %d temp: %hd hum: %hu bat: %hu %%: %hhu",
+	LOG_DBG("%s (%s) rssi: %d temp: %hd hum: %hu bat: %hu mv %%: %hhu",
 		log_strdup(addr_str), log_strdup(dev->name),
 		(int)rec->measurements.rssi,
 		rec->measurements.temperature, rec->measurements.humidity,
