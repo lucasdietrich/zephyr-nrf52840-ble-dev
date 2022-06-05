@@ -1,0 +1,9 @@
+if BOARD_ACN52840
+
+config BOARD
+	default "acn52840"
+
+config BT_CTLR
+	default BT
+
+endif #BOARD_ACN52840

@@ -7,7 +7,7 @@
             "venvPath": "../.venv",
             "westPath": "../.venv/bin/west",
             "netToolsPath": "../tools/net-tools",
-            "serialNumber": "683339521", /* 683339521, 50106017 */
+            "serialNumber": "50106017", /* 683339521, 50106017 */
         }
     },
     "tasks": [
@@ -35,7 +35,25 @@
             "label": "Build Module",
             "detail": "Build",
             "type": "shell",
-            "command": "${westPath} build -b custom_acn52840",
+            "command": "${westPath} build -b acn52840",
+            "args": [],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "options": {
+                "statusbar": {
+                    "hide": false
+                }
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Custom",
+            "detail": "Build",
+            "type": "shell",
+            "command": "${westPath} build -b acn52840 -- -DDTC_OVERLAY_FILE=\"overlays/acn52840.overlay overlays/custom_acn52840.overlay\"",
             "args": [],
             "group": "build",
             "presentation": {

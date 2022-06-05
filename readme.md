@@ -45,7 +45,7 @@ UART configuration is for board `nrf52840dk_nrf52840` :
 | RTS/CTS         | off     |
 | HW flow control | off     |
 
-And for `custom_acn52840` board :
+And for `acn52840` board :
 
 | Option          | Value |
 | --------------- | ----- |
@@ -73,7 +73,7 @@ The IPC protocol is based on messages of fixed length. IPC frame format is as fo
 ## LOGS
 
 - `nrf52840dk_nrf52840`: logging via UART0
-- `custom_acn52840` : logging using SEGGER RTT
+- `acn52840` : logging using SEGGER RTT
   - Run RTT Client `JLinkRTTClient`
   - Run debugger `JLinkGDBServerCLExe -device nrf52840_xxaa -if SWD`
 
@@ -114,7 +114,7 @@ The IPC protocol is based on messages of fixed length. IPC frame format is as fo
 [00:00:12.119,964] <dbg> app.send_data_frame: count = 8, frame_time = 12
 ```
 
-## Custom board `custom_acn52840`
+## Custom board `acn52840`
 
 Check if board is found using : `west boards --board-root . | grep acn52840`
 

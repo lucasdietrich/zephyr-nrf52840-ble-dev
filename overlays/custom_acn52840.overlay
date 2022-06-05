@@ -1,5 +1,43 @@
+
 / {
-    aliases {
-        
+	leds {
+		led0 {
+			gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+			label = "LED TX";
+		};
+		led1 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+			label = "LED RX";
+		};
+		led2 {
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			label = "LED BLE";
+		};
+	};
+
+
+    pwmleds {
+        pwm_led0: pwm_led_tx {
+            pwms = <&pwm0 12>;
+        };
+        pwm_led1: pwm_led_rx {
+            pwms = <&pwm0 13>;
+        };
+        pwm_led2: pwm_led_ble {
+            pwms = <&pwm0 15>;
+        };
     };
+};
+
+&pwm0 {
+    status = "okay";
+
+    ch0-pin = <12>;
+    ch0-inverted;
+
+    ch1-pin = <13>;
+    ch1-inverted;
+
+    ch2-pin = <15>;
+    ch2-inverted;
 };
